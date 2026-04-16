@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplayer Game Platform</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --panel: #fffaf2;
+      --ink: #1f2a44;
+      --accent: #0a7f5a;
+      --line: #c8b998;
+      --danger: #a02020;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top right, #fff7e4, var(--bg));
+      color: var(--ink);
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 28px auto;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(20, 30, 60, 0.08);
+    }
+
+    h1 {
+      margin: 0;
+      letter-spacing: 0.6px;
+      font-size: 1.6rem;
+    }
+
+    h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.1rem;
+    }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    input, button, select {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      border: none;
+      transition: transform 0.12s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .cell {
+      width: 72px;
+      height: 72px;
+      font-size: 2rem;
+      font-weight: bold;
+      background: #fff;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+    }
+
+    .muted { opacity: 0.75; }
+    .err { color: var(--danger); }
+
+    @media (max-width: 700px) {
+      #board { grid-template-columns: repeat(3, 58px); }
+      .cell { width: 58px; height: 58px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Multiplayer Game Platform</h1>
+    <p class="muted">Login with your player ID and name, view your profile, choose a game, and play remotely.</p>
+  </div>
+
+  <div class="card">
+    <h2>Login</h2>
+    <div class="row">
+      <input id="playerId" placeholder="Player ID (e.g. p001)" />
+      <input id="playerName" placeholder="Player Name" />
+      <button id="loginBtn">Connect</button>
+    </div>
+    <p id="loginStatus"></p>
+  </div>
+
+  <div class="card" id="profileCard" style="display:none;">
+    <h2>Profile</h2>
+    <pre id="profileOut"></pre>
+  </div>
+
+  <div class="card" id="gameSelectCard" style="display:none;">
+    <h2>Choose Game</h2>
+    <div class="row">
+      <select id="gameSelect"></select>
+      <button id="queueBtn">Find Match</button>
+    </div>
+    <p id="queueStatus"></p>
+  </div>
+
+  <div class="card" id="matchCard" style="display:none;">
+    <h2>Match</h2>
+    <p id="matchInfo"></p>
+    <p id="stateInfo"></p>
+    <div id="board"></div>
+    <p id="actionInfo"></p>
+    <button id="leaveBtn" style="display:none; background:#a02020;">Leave Match (Forfeit)</button>
+  </div>
+</div>
+
+<script>
+  let sessionId = null;
+  let roomId = null;
+  let mySymbol = null;
+  let matchPollTimer = null;
+  let statePollTimer = null;
+  let heartbeatTimer = null;
+
+  const loginStatus = document.getElementById("loginStatus");
+  const queueStatus = document.getElementById("queueStatus");
+  const matchInfo = document.getElementById("matchInfo");
+  const stateInfo = document.getElementById("stateInfo");
+  const actionInfo = document.getElementById("actionInfo");
+  const boardEl = document.getElementById("board");
+
+  document.getElementById("loginBtn").addEventListener("click", login);
+  document.getElementById("queueBtn").addEventListener("click", queueForGame);
+  document.getElementById("leaveBtn").addEventListener("click", leaveGame);
+
+  async function login() {
+    const playerId = document.getElementById("playerId").value.trim();
+    const playerName = document.getElementById("playerName").value.trim();
+    try {
+      const res = await apiPost("/api/login", { playerId, playerName });
+      sessionId = res.sessionId;
+      loginStatus.textContent = "Connected as " + res.profile.playerName + " (" + res.profile.playerId + ")";
+      loginStatus.className = "";
+
+      document.getElementById("profileCard").style.display = "block";
+      document.getElementById("gameSelectCard").style.display = "block";
+      renderProfile(res.profile);
+      await loadGames();
+    } catch (e) {
+      loginStatus.textContent = e.message;
+      loginStatus.className = "err";
+    }
+  }
+
+  function renderProfile(profile) {
+    document.getElementById("profileOut").textContent = JSON.stringify(profile, null, 2);
+  }
+
+  async function loadGames() {
+    const games = await apiGet("/api/games");
+    const sel = document.getElementById("gameSelect");
+    sel.innerHTML = "";
+    for (const game of games.games) {
+      const op = document.createElement("option");
+      op.value = game;
+      op.textContent = game;
+      sel.appendChild(op);
+    }
+  }
+
+  async function queueForGame() {
+    if (!sessionId) return;
+    const gameType = document.getElementById("gameSelect").value;
+    try {
+      const ticket = await apiPost("/api/match/request", { sessionId, gameType });
+      if (!ticket.ticketId) {
+        queueStatus.textContent = ticket.message;
+        return;
+      }
+      queueStatus.textContent = "Queued. Waiting for opponent...";
+      startMatchPolling(ticket.ticketId);
+    } catch (e) {
+      queueStatus.textContent = e.message;
+      queueStatus.className = "err";
+    }
+  }
+
+  function startMatchPolling(ticketId) {
+    clearInterval(matchPollTimer);
+    matchPollTimer = setInterval(async () => {
+      try {
+        const status = await apiGet(`/api/match/poll?sessionId=${enc(sessionId)}&ticketId=${enc(ticketId)}`);
+        queueStatus.textContent = status.message;
+        if (status.matched) {
+          clearInterval(matchPollTimer);
+          roomId = status.roomId;
+          mySymbol = status.symbol;
+          document.getElementById("matchCard").style.display = "block";
+          document.getElementById("leaveBtn").style.display = "inline-block";
+          matchInfo.textContent = `Matched. You are ${mySymbol}. Opponent: ${status.opponent}`;
+          startStateLoop();
+        }
+      } catch (e) {
+        queueStatus.textContent = e.message;
+      }
+    }, 1000);
+  }
+
+  function startStateLoop() {
+    clearInterval(statePollTimer);
+    clearInterval(heartbeatTimer);
+
+    statePollTimer = setInterval(async () => {
+      if (!roomId) return;
+      try {
+        const state = await apiGet(`/api/game/state?sessionId=${enc(sessionId)}&roomId=${enc(roomId)}`);
+        renderBoard(state);
+        stateInfo.textContent = `Turn: ${state.currentTurn} | ${state.statusMessage || ""}`;
+
+        if (state.finished) {
+          clearInterval(statePollTimer);
+          clearInterval(heartbeatTimer);
+          document.getElementById("leaveBtn").style.display = "none";
+          if (state.draw) {
+            actionInfo.textContent = "Game ended in draw.";
+          } else {
+            actionInfo.textContent = "Winner: " + state.winner;
+          }
+          const profile = await apiGet(`/api/profile?sessionId=${enc(sessionId)}`);
+          renderProfile(profile);
+        } else {
+          actionInfo.textContent = (state.currentTurn === mySymbol) ? "Your turn" : "Opponent turn";
+        }
+      } catch (e) {
+        actionInfo.textContent = e.message;
+      }
+    }, 900);
+
+    heartbeatTimer = setInterval(async () => {
+      if (!roomId) return;
+      try {
+        await apiPost("/api/game/heartbeat", { sessionId, roomId });
+      } catch (_) {}
+    }, 4000);
+  }
+
+  function renderBoard(state) {
+    boardEl.innerHTML = "";
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const btn = document.createElement("button");
+        btn.className = "cell";
+        btn.textContent = state.board[r][c] || "";
+        btn.disabled = !!state.board[r][c] || state.finished || state.currentTurn !== mySymbol;
+        btn.addEventListener("click", async () => {
+          try {
+            const res = await apiPost("/api/game/move", { sessionId, roomId, row: r, col: c });
+            actionInfo.textContent = res.message;
+          } catch (e) {
+            actionInfo.textContent = e.message;
+          }
+        });
+        boardEl.appendChild(btn);
+      }
+    }
+  }
+
+  async function leaveGame() {
+    if (!sessionId || !roomId) return;
+    try {
+      await apiPost("/api/game/leave", { sessionId, roomId });
+    } catch (_) {}
+  }
+
+  window.addEventListener("beforeunload", () => {
+    if (sessionId && roomId) {
+      const data = new URLSearchParams({ sessionId, roomId }).toString();
+      navigator.sendBeacon("/api/game/leave", data);
+    }
+  });
+
+  async function apiGet(url) {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Request failed");
+    }
+    return data;
+  }
+
+  async function apiPost(url, body) {
+    const encoded = new URLSearchParams(body).toString();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+      body: encoded
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Request failed");
+    }
+    return data;
+  }
+
+  function enc(s) {
+    return encodeURIComponent(s);
+  }
+</script>
+</body>
+</html>
