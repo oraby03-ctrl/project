@@ -11,6 +11,8 @@ public record GameStateView(
         boolean finished,
         String playerX,
         String playerO,
+        String playerXName,
+        String playerOName,
         String statusMessage
 ) implements Serializable {
 }

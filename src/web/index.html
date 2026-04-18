@@ -3,7 +3,851 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
   <title>Multiplayer Game Platform</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1923;
+      --surface: #182334;
+      --surface2: #243450;
+      --accent: #00e696;
+      --accent2: #3aadff;
+      --danger: #ff6060;
+      --warn: #f7b94a;
+      --text: #edf2f8;
+      --muted: #9ab2cc;
+      --border: #3a5270;
+      --radius: 14px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+      color-scheme: dark;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── PAGE SYSTEM ──────────────────────────────────────────── */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; }
+
+    /* ── WELCOME PAGE ─────────────────────────────────────────── */
+    #page-welcome {
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 60% 30%, #0d3a2e 0%, var(--bg) 70%);
+    }
+
+    .welcome-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow);
+    }
+
+    .welcome-box .logo {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+
+    .welcome-box .tagline {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+
+    .field label { font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    input {
+      background-color: #2e4265 !important;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 0.97rem;
+      color: #ffffff !important;
+      caret-color: var(--accent);
+      outline: none;
+      color-scheme: dark;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--accent); background-color: #2e4265 !important; }
+    input::placeholder { color: #7a9abf; opacity: 1; }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-text-fill-color: #ffffff !important;
+      -webkit-box-shadow: 0 0 0px 1000px #2e4265 inset !important;
+      box-shadow: 0 0 0px 1000px #2e4265 inset !important;
+      caret-color: var(--accent);
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.12s;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: var(--accent); color: #0c1f18; width: 100%; margin-top: 8px; font-weight: 700; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-warn { background: var(--warn); color: #1a0e00; }
+
+    .err-msg { color: var(--danger); font-size: 0.87rem; margin-top: 10px; min-height: 20px; }
+
+    /* ── NAV BAR ──────────────────────────────────────────────── */
+    .nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-user { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--muted); }
+    .nav-user strong { color: var(--text); }
+
+    /* ── LOBBY PAGE ───────────────────────────────────────────── */
+    #page-lobby { flex-direction: column; }
+
+    .lobby-body {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 20px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 780px) {
+      .lobby-body { grid-template-columns: 1fr; }
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+
+    .game-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      text-align: center;
+    }
+    .game-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0, 212, 138, 0.12);
+    }
+
+    .game-card .game-icon { font-size: 2.6rem; margin-bottom: 10px; }
+    .game-card .game-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; color: #ffffff; }
+    .game-card .game-desc { font-size: 0.8rem; color: #a8c0d8; }
+
+    /* ── SCOREBOARD ───────────────────────────────────────────── */
+    .scoreboard-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .scoreboard-panel .panel-header {
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .score-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; color: #ffffff; }
+    .score-table th {
+      padding: 8px 14px;
+      text-align: left;
+      color: #a8c0d8;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #1c2e47;
+    }
+    .score-table td { padding: 10px 14px; border-top: 1px solid var(--border); color: #ffffff; }
+    .score-table tr:hover td { background: rgba(255,255,255,0.07); }
+    .score-table .rank { color: var(--muted); font-size: 0.82rem; }
+    .score-table .pts { font-weight: 700; color: var(--accent); }
+    .score-table .me td { background: rgba(0, 230, 150, 0.14); }
+    .medal-1 { color: #ffd700; }
+    .medal-2 { color: #c0c0c0; }
+    .medal-3 { color: #cd7f32; }
+
+    /* ── GAME PAGE ────────────────────────────────────────────── */
+    #page-game { flex-direction: column; }
+
+    .game-body {
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    .match-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+    }
+
+    .match-banner .vs-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .player-pill {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.92rem;
+    }
+    .player-pill.me { border: 1px solid var(--accent); color: var(--accent); }
+    .player-pill.opp { border: 1px solid var(--muted); color: var(--text); }
+    .vs-sep { color: var(--muted); font-size: 0.85rem; }
+
+    .turn-bar {
+      text-align: center;
+      padding: 8px 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    .turn-bar .active-turn { color: var(--accent); font-weight: 700; }
+
+    .board-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 20px 0; }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 90px);
+      gap: 8px;
+    }
+
+    .cell {
+      width: 90px;
+      height: 90px;
+      font-size: 2.4rem;
+      font-weight: 900;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .cell:not(:disabled):hover { background: var(--surface2); border-color: var(--accent); }
+    .cell:disabled { cursor: default; }
+    .cell.X { color: var(--accent); }
+    .cell.O { color: var(--accent2); }
+
+    .status-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 4px 0 8px;
+    }
+
+    /* queue state */
+    .queue-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .spinner {
+      display: inline-block;
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESULTS PAGE ─────────────────────────────────────────── */
+    #page-results {
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 40% 60%, #0d2a3a 0%, var(--bg) 70%);
+    }
+
+    .result-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .result-emoji { font-size: 4rem; margin-bottom: 14px; }
+
+    .result-headline {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .result-headline.win { color: var(--accent); }
+    .result-headline.lose { color: var(--danger); }
+    .result-headline.draw { color: var(--warn); }
+
+    .result-sub { color: var(--muted); font-size: 0.92rem; margin-bottom: 24px; }
+
+    .result-stats {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+    .result-stat { display: flex; flex-direction: column; gap: 4px; }
+    .result-stat .val { font-size: 1.4rem; font-weight: 700; }
+    .result-stat .lbl { font-size: 0.78rem; color: var(--text); opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .profile-mini {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-around;
+      font-size: 0.9rem;
+    }
+    .profile-mini .stat { text-align: center; }
+    .profile-mini .stat .n { font-size: 1.2rem; font-weight: 700; }
+    .profile-mini .stat .l { font-size: 0.75rem; color: var(--text); opacity: 0.65; text-transform: uppercase; }
+
+    /* ── MODAL ────────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .modal .modal-icon { font-size: 2.4rem; margin-bottom: 12px; }
+    .modal h3 { margin-bottom: 10px; font-size: 1.2rem; }
+    .modal p { color: var(--text); opacity: 0.75; font-size: 0.9rem; margin-bottom: 24px; }
+    .modal-btns { display: flex; gap: 12px; justify-content: center; }
+
+    @media (max-width: 520px) {
+      #board { grid-template-columns: repeat(3, 76px); }
+      .cell { width: 76px; height: 76px; }
+      .welcome-box, .result-box { padding: 32px 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ WELCOME PAGE ═══ -->
+<div id="page-welcome" class="page active">
+  <div class="welcome-box">
+    <div class="logo">🎮 GameHub</div>
+    <div class="tagline">Sign in to join the arena</div>
+    <div class="field">
+      <label>Player ID</label>
+      <input id="playerId" placeholder="e.g. p001" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label>Display Name</label>
+      <input id="playerName" placeholder="e.g. Alice" autocomplete="nickname" />
+    </div>
+    <button class="btn btn-primary" id="loginBtn">Sign In →</button>
+    <div class="err-msg" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ LOBBY PAGE ════ -->
+<div id="page-lobby" class="page">
+  <nav class="nav">
+    <span class="nav-logo">🎮 GameHub</span>
+    <div class="nav-user">
+      <span>Signed in as <strong id="navName"></strong></span>
+    </div>
+  </nav>
+  <div class="lobby-body">
+    <!-- left: games -->
+    <div>
+      <div class="section-title">Choose a game</div>
+      <div class="game-grid" id="gameGrid"></div>
+      <div class="err-msg" id="lobbyErr"></div>
+    </div>
+    <!-- right: scoreboard -->
+    <div class="scoreboard-panel">
+      <div class="panel-header">
+        🏆 Leaderboard
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.8rem;" id="refreshScoreBtn">↻</button>
+      </div>
+      <table class="score-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ GAME PAGE ═════ -->
+<div id="page-game" class="page">
+  <nav class="nav">
+    <span class="nav-logo">🎮 GameHub</span>
+    <button class="btn btn-secondary" style="padding:5px 14px;font-size:0.85rem;" id="navLeaveDuringGame">← Lobby</button>
+  </nav>
+  <div class="game-body">
+
+    <!-- queuing state -->
+    <div class="queue-state" id="queueState">
+      <div class="spinner"></div>
+      <div id="queueMsg">Looking for an opponent…</div>
+    </div>
+
+    <!-- active game -->
+    <div id="gameState" style="display:none;">
+      <div class="match-banner">
+        <div class="vs-row">
+          <span class="player-pill me" id="playerMeLabel"></span>
+          <span class="vs-sep">vs</span>
+          <span class="player-pill opp" id="playerOppLabel"></span>
+        </div>
+        <div class="turn-bar" id="turnBar"></div>
+      </div>
+
+      <div class="board-wrap">
+        <div id="board"></div>
+        <div class="status-msg" id="statusMsg"></div>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="btn btn-danger" id="forfeitBtn">Forfeit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ RESULTS PAGE ══ -->
+<div id="page-results" class="page">
+  <div class="result-box">
+    <div class="result-emoji" id="resultEmoji"></div>
+    <div class="result-headline" id="resultHeadline"></div>
+    <div class="result-sub" id="resultSub"></div>
+    <div class="result-stats">
+      <div class="result-stat">
+        <span class="val" id="statDuration">—</span>
+        <span class="lbl">Duration</span>
+      </div>
+      <div class="result-stat">
+        <span class="val" id="statMoves">—</span>
+        <span class="lbl">Moves</span>
+      </div>
+    </div>
+    <div class="profile-mini" id="profileMini"></div>
+    <button class="btn btn-primary" id="backToLobbyBtn">Back to Lobby</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ FORFEIT MODAL ═ -->
+<div class="modal-overlay" id="forfeitModal">
+  <div class="modal">
+    <div class="modal-icon">⚠️</div>
+    <h3>Leave the match?</h3>
+    <p>If you leave now you will <strong>lose the game</strong> by forfeit. Are you sure?</p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" id="modalCancel">Stay</button>
+      <button class="btn btn-danger" id="modalConfirmLeave">Leave & Forfeit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────
+let sessionId     = null;
+let myPlayerId    = null;
+let myPlayerName  = null;
+let roomId        = null;
+let mySymbol      = null;
+let gameStartedAt = null;
+let movesPlayed   = 0;
+
+let matchPollTimer = null;
+let statePollTimer = null;
+let heartbeatTimer = null;
+
+// ── Page routing ─────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ── Welcome ──────────────────────────────────────────────────────────
+document.getElementById("loginBtn").addEventListener("click", doLogin);
+document.getElementById("playerName").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+
+async function doLogin() {
+  const playerId   = document.getElementById("playerId").value.trim();
+  const playerName = document.getElementById("playerName").value.trim();
+  const errEl      = document.getElementById("loginErr");
+  errEl.textContent = "";
+  try {
+    const res = await apiPost("/api/login", { playerId, playerName });
+    sessionId    = res.sessionId;
+    myPlayerId   = res.profile.playerId;
+    myPlayerName = res.playerName;
+    document.getElementById("navName").textContent = myPlayerName;
+    showPage("page-lobby");
+    await loadLobby();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+// ── Lobby ────────────────────────────────────────────────────────────
+const GAME_META = {
+  TIC_TAC_TOE: { icon: "⭕", name: "Tic‑Tac‑Toe", desc: "Classic 3×3 strategy" }
+};
+
+async function loadLobby() {
+  await Promise.all([loadGames(), loadScoreboard()]);
+}
+
+async function loadGames() {
+  const data = await apiGet("/api/games");
+  const grid = document.getElementById("gameGrid");
+  grid.innerHTML = "";
+  for (const g of data.games) {
+    const meta = GAME_META[g] || { icon: "🎲", name: g, desc: "Multiplayer game" };
+    const card = document.createElement("div");
+    card.className = "game-card";
+    card.innerHTML = `<div class="game-icon">${meta.icon}</div>
+                      <div class="game-name">${meta.name}</div>
+                      <div class="game-desc">${meta.desc}</div>`;
+    card.addEventListener("click", () => startQueueForGame(g));
+    grid.appendChild(card);
+  }
+}
+
+async function loadScoreboard() {
+  try {
+    const data = await apiGet("/api/scoreboard");
+    const tbody = document.getElementById("scoreBody");
+    tbody.innerHTML = "";
+    data.scoreboard.forEach((p, i) => {
+      const medals = ["🥇", "🥈", "🥉"];
+      const medal  = i < 3 ? `<span class="${"medal-" + (i+1)}">${medals[i]}</span>` : `<span class="rank">${i+1}</span>`;
+      const tr     = document.createElement("tr");
+      if (p.playerId === myPlayerId) tr.className = "me";
+      tr.innerHTML = `<td>${medal}</td>
+                      <td>${esc(p.playerName)}</td>
+                      <td>${p.wins}</td>
+                      <td>${p.draws}</td>
+                      <td>${p.losses}</td>
+                      <td class="pts">${p.score}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (_) {}
+}
+
+document.getElementById("refreshScoreBtn").addEventListener("click", loadScoreboard);
+
+// ── Queue & matchmaking ───────────────────────────────────────────────
+async function startQueueForGame(gameType) {
+  document.getElementById("lobbyErr").textContent = "";
+  try {
+    const ticket = await apiPost("/api/match/request", { sessionId, gameType });
+    if (!ticket.ticketId) {
+      document.getElementById("lobbyErr").textContent = ticket.message;
+      return;
+    }
+    roomId        = null;
+    mySymbol      = null;
+    gameStartedAt = null;
+    movesPlayed   = 0;
+    document.getElementById("queueState").style.display  = "block";
+    document.getElementById("gameState").style.display   = "none";
+    document.getElementById("queueMsg").textContent      = "Searching for an opponent…";
+    showPage("page-game");
+    pollForMatch(ticket.ticketId);
+  } catch (e) {
+    document.getElementById("lobbyErr").textContent = e.message;
+  }
+}
+
+function pollForMatch(ticketId) {
+  clearInterval(matchPollTimer);
+  matchPollTimer = setInterval(async () => {
+    try {
+      const status = await apiGet(`/api/match/poll?sessionId=${enc(sessionId)}&ticketId=${enc(ticketId)}`);
+      document.getElementById("queueMsg").textContent = status.message;
+      if (status.matched) {
+        clearInterval(matchPollTimer);
+        roomId        = status.roomId;
+        mySymbol      = status.symbol;
+        gameStartedAt = Date.now();
+        movesPlayed   = 0;
+        document.getElementById("queueState").style.display = "none";
+        document.getElementById("gameState").style.display  = "block";
+        const myName  = myPlayerName;
+        const oppName = status.opponent;
+        document.getElementById("playerMeLabel").textContent  = `${myName} (${mySymbol})`;
+        document.getElementById("playerOppLabel").textContent = `${oppName} (${mySymbol === "X" ? "O" : "X"})`;
+        startStateLoop();
+      }
+    } catch (e) {
+      document.getElementById("queueMsg").textContent = e.message;
+    }
+  }, 1000);
+}
+
+// ── Active game ───────────────────────────────────────────────────────
+function startStateLoop() {
+  clearInterval(statePollTimer);
+  clearInterval(heartbeatTimer);
+
+  statePollTimer = setInterval(async () => {
+    if (!roomId) return;
+    try {
+      const state = await apiGet(`/api/game/state?sessionId=${enc(sessionId)}&roomId=${enc(roomId)}`);
+      renderBoard(state);
+      movesPlayed = state.board.flat().filter(c => c !== null).length;
+
+      const turnName = state.currentTurn === "X" ? state.playerXName : state.playerOName;
+      const isMyTurn = state.currentTurn === mySymbol;
+      document.getElementById("turnBar").innerHTML =
+        isMyTurn
+          ? `<span class="active-turn">Your turn ✦</span>`
+          : `<span>${turnName}'s turn…</span>`;
+      document.getElementById("statusMsg").textContent = state.statusMessage || "";
+
+      if (state.finished) {
+        clearInterval(statePollTimer);
+        clearInterval(heartbeatTimer);
+        showResults(state);
+      }
+    } catch (e) {
+      document.getElementById("statusMsg").textContent = e.message;
+    }
+  }, 900);
+
+  heartbeatTimer = setInterval(async () => {
+    if (!roomId) return;
+    try { await apiPost("/api/game/heartbeat", { sessionId, roomId }); } catch (_) {}
+  }, 4000);
+}
+
+function renderBoard(state) {
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const val = state.board[r][c];
+      const btn = document.createElement("button");
+      btn.className = "cell" + (val ? " " + val : "");
+      btn.textContent = val || "";
+      btn.disabled = !!val || state.finished || state.currentTurn !== mySymbol;
+      btn.addEventListener("click", async () => {
+        try {
+          await apiPost("/api/game/move", { sessionId, roomId, row: r, col: c });
+        } catch (e) {
+          document.getElementById("statusMsg").textContent = e.message;
+        }
+      });
+      boardEl.appendChild(btn);
+    }
+  }
+}
+
+// ── Results ───────────────────────────────────────────────────────────
+async function showResults(state) {
+  const myPid   = mySymbol === "X" ? state.playerX : state.playerO;
+  const isDraw  = state.draw;
+  const iWon    = !isDraw && state.winner === myPid;
+
+  document.getElementById("resultEmoji").textContent    = iWon ? "🏆" : isDraw ? "🤝" : "😞";
+  const hl = document.getElementById("resultHeadline");
+  hl.textContent = iWon ? "You Win!" : isDraw ? "It's a Draw!" : "You Lose";
+  hl.className   = "result-headline " + (iWon ? "win" : isDraw ? "draw" : "lose");
+  document.getElementById("resultSub").textContent = state.statusMessage || "";
+
+  const dur   = gameStartedAt ? Math.round((Date.now() - gameStartedAt) / 1000) : 0;
+  const mins  = String(Math.floor(dur / 60)).padStart(2, "0");
+  const secs  = String(dur % 60).padStart(2, "0");
+  document.getElementById("statDuration").textContent = `${mins}:${secs}`;
+  document.getElementById("statMoves").textContent    = movesPlayed;
+
+  try {
+    const profile = await apiGet(`/api/profile?sessionId=${enc(sessionId)}`);
+    document.getElementById("profileMini").innerHTML = `
+      <div class="stat"><div class="n" style="color:var(--accent)">${profile.wins}</div><div class="l">Wins</div></div>
+      <div class="stat"><div class="n" style="color:var(--warn)">${profile.draws}</div><div class="l">Draws</div></div>
+      <div class="stat"><div class="n" style="color:var(--danger)">${profile.losses}</div><div class="l">Losses</div></div>
+      <div class="stat"><div class="n" style="color:var(--accent2)">${profile.score}</div><div class="l">Score</div></div>
+    `;
+  } catch (_) {}
+
+  roomId = null;
+  showPage("page-results");
+}
+
+document.getElementById("backToLobbyBtn").addEventListener("click", async () => {
+  showPage("page-lobby");
+  await loadLobby();
+});
+
+// ── Forfeit / leave during game ───────────────────────────────────────
+document.getElementById("forfeitBtn").addEventListener("click", () => openForfeitModal());
+document.getElementById("navLeaveDuringGame").addEventListener("click", () => {
+  if (roomId) {
+    openForfeitModal();
+  } else {
+    // still queuing — just cancel and go back
+    clearInterval(matchPollTimer);
+    showPage("page-lobby");
+    loadLobby();
+  }
+});
+
+function openForfeitModal() {
+  document.getElementById("forfeitModal").classList.add("open");
+}
+
+document.getElementById("modalCancel").addEventListener("click", () => {
+  document.getElementById("forfeitModal").classList.remove("open");
+});
+
+document.getElementById("modalConfirmLeave").addEventListener("click", async () => {
+  document.getElementById("forfeitModal").classList.remove("open");
+  clearInterval(statePollTimer);
+  clearInterval(heartbeatTimer);
+  if (sessionId && roomId) {
+    try { await apiPost("/api/game/leave", { sessionId, roomId }); } catch (_) {}
+  }
+  roomId = null;
+  showPage("page-lobby");
+  await loadLobby();
+});
+
+// Warn on browser close/tab switch while in an active game
+window.addEventListener("beforeunload", e => {
+  if (sessionId && roomId) {
+    const data = new URLSearchParams({ sessionId, roomId }).toString();
+    navigator.sendBeacon("/api/game/leave", data);
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────
+async function apiGet(url) {
+  const res  = await fetch(url);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+async function apiPost(url, body) {
+  const res  = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: new URLSearchParams(body).toString()
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+function enc(s) { return encodeURIComponent(s); }
+
+function esc(s) {
+  if (!s) return "";
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
   <style>
     :root {
       --bg: #f4efe5;
@@ -140,6 +984,7 @@
   let sessionId = null;
   let roomId = null;
   let mySymbol = null;
+  let myPlayerName = null;
   let matchPollTimer = null;
   let statePollTimer = null;
   let heartbeatTimer = null;
@@ -161,6 +1006,7 @@
     try {
       const res = await apiPost("/api/login", { playerId, playerName });
       sessionId = res.sessionId;
+      myPlayerName = res.playerName;
       loginStatus.textContent = "Connected as " + res.profile.playerName + " (" + res.profile.playerId + ")";
       loginStatus.className = "";
 
@@ -219,7 +1065,7 @@
           mySymbol = status.symbol;
           document.getElementById("matchCard").style.display = "block";
           document.getElementById("leaveBtn").style.display = "inline-block";
-          matchInfo.textContent = `Matched. You are ${mySymbol}. Opponent: ${status.opponent}`;
+          matchInfo.textContent = `Matched! You are ${myPlayerName} (${mySymbol}). Opponent: ${status.opponent}`;
           startStateLoop();
         }
       } catch (e) {
@@ -237,16 +1083,18 @@
       try {
         const state = await apiGet(`/api/game/state?sessionId=${enc(sessionId)}&roomId=${enc(roomId)}`);
         renderBoard(state);
-        stateInfo.textContent = `Turn: ${state.currentTurn} | ${state.statusMessage || ""}`;
+        const turnName = state.currentTurn === "X" ? state.playerXName : state.playerOName;
+        stateInfo.textContent = `Turn: ${turnName} (${state.currentTurn}) | ${state.statusMessage || ""}`;
 
         if (state.finished) {
           clearInterval(statePollTimer);
           clearInterval(heartbeatTimer);
           document.getElementById("leaveBtn").style.display = "none";
           if (state.draw) {
-            actionInfo.textContent = "Game ended in draw.";
+            actionInfo.textContent = "It's a draw!";
           } else {
-            actionInfo.textContent = "Winner: " + state.winner;
+            const myPlayerId = mySymbol === "X" ? state.playerX : state.playerO;
+            actionInfo.textContent = (state.winner === myPlayerId) ? "You win!" : "You lose.";
           }
           const profile = await apiGet(`/api/profile?sessionId=${enc(sessionId)}`);
           renderProfile(profile);

@@ -8,7 +8,9 @@ import java.util.UUID;
 public class GameRoom {
     private final String roomId;
     private final String playerX;
+    private final String playerXName;
     private final String playerO;
+    private final String playerOName;
     private final String[][] board;
     private String currentTurn;
     private String winnerSymbol;
@@ -20,10 +22,12 @@ public class GameRoom {
     private long lastSeenO;
     private String statusMessage;
 
-    public GameRoom(String playerX, String playerO) {
+    public GameRoom(String playerX, String playerXName, String playerO, String playerOName) {
         this.roomId = UUID.randomUUID().toString();
         this.playerX = playerX;
+        this.playerXName = playerXName;
         this.playerO = playerO;
+        this.playerOName = playerOName;
         this.board = new String[3][3];
         this.currentTurn = "X";
         this.moveCount = 0;
@@ -71,7 +75,7 @@ public class GameRoom {
         if (isWinner(symbol)) {
             winnerSymbol = symbol;
             finished = true;
-            statusMessage = "Player " + winnerName() + " won";
+            statusMessage = "Player " + ("X".equals(symbol) ? playerXName : playerOName) + " won";
         } else if (moveCount == 9) {
             draw = true;
             finished = true;
@@ -107,10 +111,10 @@ public class GameRoom {
 
         if (xTimedOut && !oTimedOut) {
             winnerSymbol = "O";
-            statusMessage = "Player " + playerX + " disconnected and lost by forfeit";
+            statusMessage = "Player " + playerXName + " disconnected and lost by forfeit";
         } else if (oTimedOut && !xTimedOut) {
             winnerSymbol = "X";
-            statusMessage = "Player " + playerO + " disconnected and lost by forfeit";
+            statusMessage = "Player " + playerOName + " disconnected and lost by forfeit";
         } else {
             draw = true;
             statusMessage = "Both players disconnected";
@@ -124,10 +128,10 @@ public class GameRoom {
         }
         if (playerX.equals(quittingPlayerId)) {
             winnerSymbol = "O";
-            statusMessage = "Player " + playerX + " left and lost by forfeit";
+            statusMessage = "Player " + playerXName + " left and lost by forfeit";
         } else if (playerO.equals(quittingPlayerId)) {
             winnerSymbol = "X";
-            statusMessage = "Player " + playerO + " left and lost by forfeit";
+            statusMessage = "Player " + playerOName + " left and lost by forfeit";
         }
         finished = true;
     }
@@ -143,19 +147,21 @@ public class GameRoom {
     }
 
     public synchronized GameStateView snapshot() {
-        String winnerName = null;
+        String winnerId = null;
         if (winnerSymbol != null) {
-            winnerName = "X".equals(winnerSymbol) ? playerX : playerO;
+            winnerId = "X".equals(winnerSymbol) ? playerX : playerO;
         }
         return new GameStateView(
                 roomId,
                 deepCopyBoard(),
                 currentTurn,
-                winnerName,
+                winnerId,
                 draw,
                 finished,
                 playerX,
                 playerO,
+                playerXName,
+                playerOName,
                 statusMessage
         );
     }

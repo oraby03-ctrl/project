@@ -57,10 +57,11 @@ public class GamePlatformService {
 
     public MatchTicket requestMatch(String sessionId, GameType gameType) {
         String playerId = sessions.requirePlayerId(sessionId);
+        String playerName = sessions.requirePlayerName(sessionId);
         if (gameType != GameType.TIC_TAC_TOE) {
             return new MatchTicket("", "Only TIC_TAC_TOE is currently implemented");
         }
-        String ticketId = matchmaking.enqueue(playerId, gameType);
+        String ticketId = matchmaking.enqueue(playerId, playerName, gameType);
         return new MatchTicket(ticketId, "Queued for matchmaking");
     }
 
@@ -124,6 +125,10 @@ public class GamePlatformService {
 
     public List<GameType> listSupportedGames() {
         return Arrays.asList(GameType.values());
+    }
+
+    public List<PlayerProfileView> getScoreboard() {
+        return persistenceService.getScoreboard();
     }
 
     private void persistIfFinished(GameRoom room) {
