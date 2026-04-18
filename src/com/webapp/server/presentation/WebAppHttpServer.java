@@ -44,6 +44,7 @@ public class WebAppHttpServer {
         httpServer.createContext("/api/game/move", this::handleGameMove);
         httpServer.createContext("/api/game/heartbeat", this::handleHeartbeat);
         httpServer.createContext("/api/game/leave", this::handleLeave);
+        httpServer.createContext("/api/scoreboard", this::handleScoreboard);
         httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
     }
@@ -224,6 +225,25 @@ public class WebAppHttpServer {
         }
     }
 
+    private void handleScoreboard(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            var board = service.getScoreboard();
+            StringBuilder sb = new StringBuilder("{\"scoreboard\":[");
+            for (int i = 0; i < board.size(); i++) {
+                if (i > 0) sb.append(',');
+                sb.append(profileToJson(board.get(i)));
+            }
+            sb.append("]}");
+            sendJson(exchange, 200, sb.toString());
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
     private Map<String, String> parseQuery(HttpExchange exchange) {
         String raw = exchange.getRequestURI().getRawQuery();
         return parseFormEncoded(raw == null ? "" : raw);
@@ -313,6 +333,8 @@ public class WebAppHttpServer {
                 + "\"finished\":" + state.finished() + ","
                 + "\"playerX\":\"" + esc(state.playerX()) + "\","
                 + "\"playerO\":\"" + esc(state.playerO()) + "\","
+                + "\"playerXName\":\"" + esc(state.playerXName()) + "\","
+                + "\"playerOName\":\"" + esc(state.playerOName()) + "\","
                 + "\"statusMessage\":" + maybeString(state.statusMessage()) + "}";
     }
 

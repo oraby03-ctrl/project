@@ -6,6 +6,8 @@ import com.webapp.server.infrastructure.jpa.JpaBootstrap;
 import com.webapp.server.infrastructure.jpa.PlayerJpaRepository;
 import com.webapp.shared.dto.PlayerProfileView;
 
+import java.util.List;
+
 public class PersistenceService {
     private final PlayerJpaRepository playerRepository;
     private final GameRecordJpaRepository gameRecordRepository;
@@ -23,6 +25,10 @@ public class PersistenceService {
 
     public PlayerProfileView getProfile(String playerId) {
         return playerRepository.getProfile(playerId);
+    }
+
+    public List<PlayerProfileView> getScoreboard() {
+        return playerRepository.getAllProfiles();
     }
 
     public void logMove(String roomId, int moveNo, String playerId, String symbol, int row, int col) {

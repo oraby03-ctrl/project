@@ -82,6 +82,25 @@ public class PlayerJpaRepository {
         }
     }
 
+    public List<PlayerProfileView> getAllProfiles() {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            List<PlayerEntity> players = em.createQuery(
+                    "select p from PlayerEntity p order by (p.wins * 3 + p.draws) desc", PlayerEntity.class)
+                    .getResultList();
+            return players.stream().map(p -> new PlayerProfileView(
+                    p.getPlayerId(),
+                    p.getPlayerName(),
+                    p.getWins(),
+                    p.getLosses(),
+                    p.getDraws(),
+                    p.getWins() * 3 + p.getDraws()
+            )).toList();
+        } finally {
+            em.close();
+        }
+    }
+
     private PlayerEntity getByPlayerId(EntityManager em, String playerId) {
         List<PlayerEntity> result = em.createQuery("select p from PlayerEntity p where p.playerId = :playerId", PlayerEntity.class)
                 .setParameter("playerId", playerId)
