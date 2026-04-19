@@ -192,6 +192,25 @@
     .game-card .game-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; color: #ffffff; }
     .game-card .game-desc { font-size: 0.8rem; color: #a8c0d8; }
 
+    /* Coming-soon / under-development card */
+    .game-card.coming-soon {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+      position: relative;
+    }
+    .coming-soon-badge {
+      position: absolute;
+      top: 10px; left: 50%; transform: translateX(-50%);
+      background: #f59e0b;
+      color: #000;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
     /* ── SCOREBOARD ───────────────────────────────────────────── */
     .scoreboard-panel {
       background: var(--surface);
@@ -204,6 +223,7 @@
       padding: 14px 18px;
       font-weight: 700;
       font-size: 0.95rem;
+      color: #ffffff;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -226,6 +246,7 @@
     .score-table .rank { color: var(--muted); font-size: 0.82rem; }
     .score-table .pts { font-weight: 700; color: var(--accent); }
     .score-table .me td { background: rgba(0, 230, 150, 0.14); }
+    .score-table .player-id { color: #7a9bbf; font-size: 0.78rem; font-family: monospace; }
     .medal-1 { color: #ffd700; }
     .medal-2 { color: #c0c0c0; }
     .medal-3 { color: #cd7f32; }
@@ -300,6 +321,116 @@
     .cell:disabled { cursor: default; }
     .cell.X { color: var(--accent); }
     .cell.O { color: var(--accent2); }
+
+    /* ── CHECKERS BOARD ──────────────────────────────────────────── */
+    #board.checkers-board {
+      grid-template-columns: repeat(8, 56px);
+      gap: 2px;
+    }
+
+    .checkers-cell {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      cursor: default;
+      position: relative;
+      font-size: 1.6rem;
+      transition: box-shadow 0.15s;
+    }
+    .checkers-cell.dark  { background: #3d5a40; }
+    .checkers-cell.light { background: #c8a96e; }
+    .checkers-cell.clickable { cursor: pointer; }
+    .checkers-cell.clickable:hover { box-shadow: inset 0 0 0 3px var(--accent); }
+    .checkers-cell.selected { box-shadow: inset 0 0 0 3px #ffe066 !important; background: #2a4a2c !important; }
+    .checkers-cell.valid-target { box-shadow: inset 0 0 0 3px var(--accent2); }
+
+    .checker {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 900;
+      border: 3px solid rgba(0,0,0,0.25);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+      user-select: none;
+      pointer-events: none;
+    }
+    .checker.red   { background: radial-gradient(circle at 35% 35%, #ff7070, #c01010); color: #fff8f8; }
+    .checker.black { background: radial-gradient(circle at 35% 35%, #555, #1a1a1a); color: #e0e0e0; }
+    .checker.can-move {
+      box-shadow: 0 0 0 3px rgba(255, 224, 102, 0.95), 0 3px 8px rgba(0,0,0,0.4);
+      animation: pulse-glow 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes pulse-glow {
+      from { box-shadow: 0 0 0 3px rgba(255,224,102,0.8), 0 3px 8px rgba(0,0,0,0.4); }
+      to   { box-shadow: 0 0 0 4px rgba(255,224,102,1),   0 3px 14px rgba(0,0,0,0.5); }
+    }
+    .checkers-cell.selected .checker { box-shadow: 0 0 0 4px #ffe066, 0 0 18px 4px rgba(255,224,102,0.7), 0 3px 8px rgba(0,0,0,0.4); animation: none; }
+
+    /* Move-dot indicator on valid destination squares */
+    .move-dot {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0, 230, 150, 0.75);
+      border: 2px solid rgba(255,255,255,0.6);
+      pointer-events: none;
+      z-index: 2;
+    }
+    .move-dot.for-selected {
+      background: rgba(255, 224, 102, 0.9);
+      border-color: rgba(255,255,255,0.7);
+      width: 22px;
+      height: 22px;
+    }
+
+    @media (max-width: 520px) {
+      #board.checkers-board { grid-template-columns: repeat(8, 40px); gap: 1px; }
+      .checkers-cell { width: 40px; height: 40px; font-size: 1.2rem; }
+      .checker { width: 32px; height: 32px; font-size: 0.85rem; }
+    }
+
+    /* ── CONNECT FOUR BOARD ──────────────────────────────────────── */
+    #board.c4-board {
+      display: grid;
+      grid-template-columns: repeat(7, 56px);
+      gap: 4px;
+      background: #1a3a6b;
+      border: 3px solid #1a3a6b;
+      border-radius: 10px;
+      padding: 6px;
+    }
+    .c4-drop-btn {
+      width: 56px; height: 28px;
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .c4-drop-btn:hover:not(:disabled) { color: #fff; transform: translateY(2px); }
+    .c4-drop-btn:disabled { color: #2a4a6b; cursor: default; }
+    .c4-cell {
+      width: 56px; height: 56px;
+      background: #0d2244;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .c4-disc {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      box-shadow: inset 0 -3px 6px rgba(0,0,0,0.4);
+    }
+    .c4-yellow { background: radial-gradient(circle at 35% 35%, #ffe566, #d4a017); }
+    .c4-red    { background: radial-gradient(circle at 35% 35%, #ff6b6b, #b91c1c); }
 
     .status-msg {
       text-align: center;
@@ -458,6 +589,7 @@
           <tr>
             <th>#</th>
             <th>Player</th>
+            <th>ID</th>
             <th>W</th>
             <th>D</th>
             <th>L</th>
@@ -550,6 +682,11 @@ let roomId        = null;
 let mySymbol      = null;
 let gameStartedAt = null;
 let movesPlayed   = 0;
+let isCheckers    = false;
+let isConnectFour = false;
+
+// Checkers piece-selection state
+let selectedPiece = null; // {row, col} or null
 
 let matchPollTimer = null;
 let statePollTimer = null;
@@ -585,7 +722,8 @@ async function doLogin() {
 
 // ── Lobby ────────────────────────────────────────────────────────────
 const GAME_META = {
-  TIC_TAC_TOE: { icon: "⭕", name: "Tic‑Tac‑Toe", desc: "Classic 3×3 strategy" }
+  TIC_TAC_TOE: { icon: "⭕", name: "Tic‑Tac‑Toe", desc: "Classic 3×3 strategy" },
+  CHECKERS:    { icon: "🔴", name: "Checkers",     desc: "8×8 diagonal strategy" }
 };
 
 async function loadLobby() {
@@ -606,6 +744,22 @@ async function loadGames() {
     card.addEventListener("click", () => startQueueForGame(g));
     grid.appendChild(card);
   }
+  // Battleship — coming soon (static, not from API)
+  const bsCard = document.createElement("div");
+  bsCard.className = "game-card coming-soon";
+  bsCard.innerHTML = `<div class="coming-soon-badge">🚧 Under Development</div>
+                      <div class="game-icon">🚢</div>
+                      <div class="game-name">Battleship</div>
+                      <div class="game-desc">Naval grid combat</div>`;
+  grid.appendChild(bsCard);
+  // Chess — coming soon (static, not from API)
+  const chessCard = document.createElement("div");
+  chessCard.className = "game-card coming-soon";
+  chessCard.innerHTML = `<div class="coming-soon-badge">🚧 Under Development</div>
+                         <div class="game-icon">♟️</div>
+                         <div class="game-name">Chess</div>
+                         <div class="game-desc">Classic strategy board game</div>`;
+  grid.appendChild(chessCard);
 }
 
 async function loadScoreboard() {
@@ -620,6 +774,7 @@ async function loadScoreboard() {
       if (p.playerId === myPlayerId) tr.className = "me";
       tr.innerHTML = `<td>${medal}</td>
                       <td>${esc(p.playerName)}</td>
+                      <td class="player-id">${esc(p.playerId)}</td>
                       <td>${p.wins}</td>
                       <td>${p.draws}</td>
                       <td>${p.losses}</td>
@@ -642,6 +797,8 @@ async function startQueueForGame(gameType) {
     }
     roomId        = null;
     mySymbol      = null;
+    isCheckers    = false;
+    isConnectFour = false;
     gameStartedAt = null;
     movesPlayed   = 0;
     document.getElementById("queueState").style.display  = "block";
@@ -664,14 +821,21 @@ function pollForMatch(ticketId) {
         clearInterval(matchPollTimer);
         roomId        = status.roomId;
         mySymbol      = status.symbol;
+        isCheckers    = (status.gameType === "CHECKERS");
+        isConnectFour = (status.gameType === "CONNECT_FOUR");
+        selectedPiece = null;
         gameStartedAt = Date.now();
         movesPlayed   = 0;
         document.getElementById("queueState").style.display = "none";
         document.getElementById("gameState").style.display  = "block";
         const myName  = myPlayerName;
         const oppName = status.opponent;
+        const oppSymbol = mySymbol === "X" ? "O"
+          : mySymbol === "R" && isCheckers ? "B"
+          : mySymbol === "Y" ? "R"
+          : "Y";
         document.getElementById("playerMeLabel").textContent  = `${myName} (${mySymbol})`;
-        document.getElementById("playerOppLabel").textContent = `${oppName} (${mySymbol === "X" ? "O" : "X"})`;
+        document.getElementById("playerOppLabel").textContent = `${oppName} (${oppSymbol})`;
         startStateLoop();
       }
     } catch (e) {
@@ -689,16 +853,30 @@ function startStateLoop() {
     if (!roomId) return;
     try {
       const state = await apiGet(`/api/game/state?sessionId=${enc(sessionId)}&roomId=${enc(roomId)}`);
-      renderBoard(state);
+      if (isCheckers) {
+        renderCheckersBoard(state);
+      } else if (isConnectFour) {
+        renderConnectFourBoard(state);
+      } else {
+        renderBoard(state);
+      }
       movesPlayed = state.board.flat().filter(c => c !== null).length;
 
-      const turnName = state.currentTurn === "X" ? state.playerXName : state.playerOName;
       const isMyTurn = state.currentTurn === mySymbol;
+      const turnName = (state.currentTurn === "X" || state.currentTurn === "R" || state.currentTurn === "Y")
+        ? state.playerXName : state.playerOName;
+      const turnLabel = isCheckers
+        ? (state.currentTurn === "R" ? "Red" : "Black")
+        : isConnectFour
+          ? (state.currentTurn === "Y" ? "Yellow" : "Red")
+          : state.currentTurn;
       document.getElementById("turnBar").innerHTML =
         isMyTurn
           ? `<span class="active-turn">Your turn ✦</span>`
-          : `<span>${turnName}'s turn…</span>`;
-      document.getElementById("statusMsg").textContent = state.statusMessage || "";
+          : `<span>${turnName} (${turnLabel})'s turn…</span>`;
+      // Strip internal MUST_JUMP_FROM tag from displayed message
+      const displayMsg = (state.statusMessage || "").replace(/\s*\[MUST_JUMP_FROM:[^\]]+\]/, "");
+      document.getElementById("statusMsg").textContent = displayMsg;
 
       if (state.finished) {
         clearInterval(statePollTimer);
@@ -718,6 +896,7 @@ function startStateLoop() {
 
 function renderBoard(state) {
   const boardEl = document.getElementById("board");
+  boardEl.classList.remove("checkers-board", "c4-board");
   boardEl.innerHTML = "";
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
@@ -738,11 +917,223 @@ function renderBoard(state) {
   }
 }
 
+// ── Checkers valid-move computation (client-side) ─────────────────────
+function computeValidCheckersMovesForCurrentPlayer(board, sym, forcedRow, forcedCol) {
+  const ownPiece  = p => p && p.toLowerCase() === sym.toLowerCase();
+  const oppPiece  = p => p && p.toLowerCase() !== sym.toLowerCase();
+  const forwardDr = sym === "R" ? -1 : 1;
+  const inBounds  = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+  const getDirs   = piece => (piece === "R" || piece === "B")
+    ? [[-1,-1],[-1,1],[1,-1],[1,1]]
+    : [[forwardDr,-1],[forwardDr,1]];
+
+  // Collect jumps first (mandatory capture rule)
+  const jumps = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (!ownPiece(board[r][c])) continue;
+      if (forcedRow >= 0 && (r !== forcedRow || c !== forcedCol)) continue;
+      for (const [dr, dc] of getDirs(board[r][c])) {
+        const mr = r + dr, mc = c + dc, tr = r + 2*dr, tc = c + 2*dc;
+        if (!inBounds(tr, tc)) continue;
+        if (oppPiece(board[mr][mc]) && !board[tr][tc])
+          jumps.push({ fromRow: r, fromCol: c, toRow: tr, toCol: tc });
+      }
+    }
+  }
+  if (jumps.length > 0) return jumps;
+  if (forcedRow >= 0) return []; // forced piece has no more jumps
+
+  // Simple diagonal moves
+  const moves = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (!ownPiece(board[r][c])) continue;
+      for (const [dr, dc] of getDirs(board[r][c])) {
+        const tr = r + dr, tc = c + dc;
+        if (!inBounds(tr, tc) || board[tr][tc]) continue;
+        moves.push({ fromRow: r, fromCol: c, toRow: tr, toCol: tc });
+      }
+    }
+  }
+  return moves;
+}
+
+// ── Checkers board renderer (one-click) ───────────────────────────────
+function renderCheckersBoard(state) {
+  const boardEl  = document.getElementById("board");
+  boardEl.classList.remove("c4-board");
+  boardEl.classList.add("checkers-board");
+  boardEl.innerHTML = "";
+
+  const board    = state.board;
+  const isMyTurn = state.currentTurn === mySymbol;
+
+  // Parse forced jump square from statusMessage
+  let forcedRow = -1, forcedCol = -1;
+  const forceMatch = (state.statusMessage || "").match(/\[MUST_JUMP_FROM:(\d+),(\d+)\]/);
+  if (forceMatch) { forcedRow = parseInt(forceMatch[1]); forcedCol = parseInt(forceMatch[2]); }
+
+  // Pre-compute all valid moves for current player
+  const validMoves = (isMyTurn && !state.finished)
+    ? computeValidCheckersMovesForCurrentPlayer(board, mySymbol, forcedRow, forcedCol)
+    : [];
+
+  // Lookup sets
+  const srcKeys = new Set(validMoves.map(m => `${m.fromRow},${m.fromCol}`));
+  const destMap = new Map(); // "r,c" -> [{fromRow,fromCol,toRow,toCol}, ...]
+  for (const m of validMoves) {
+    const k = `${m.toRow},${m.toCol}`;
+    if (!destMap.has(k)) destMap.set(k, []);
+    destMap.get(k).push(m);
+  }
+
+  // Moves belonging to the currently selected piece
+  const selMoves   = selectedPiece
+    ? validMoves.filter(m => m.fromRow === selectedPiece.row && m.fromCol === selectedPiece.col)
+    : null;
+  const selDestSet = selMoves ? new Set(selMoves.map(m => `${m.toRow},${m.toCol}`)) : null;
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const isDark  = (r + c) % 2 === 1;
+      const piece   = board[r][c];
+      const ownP    = piece && piece.toLowerCase() === mySymbol.toLowerCase();
+      const isSel   = selectedPiece && selectedPiece.row === r && selectedPiece.col === c;
+
+      const cell = document.createElement("div");
+      cell.className = "checkers-cell " + (isDark ? "dark" : "light");
+      if (isSel) cell.classList.add("selected");
+
+      if (piece) {
+        const isRed  = (piece === "r" || piece === "R");
+        const isKing = (piece === "R" || piece === "B");
+        const disc   = document.createElement("div");
+        disc.className = "checker " + (isRed ? "red" : "black");
+        if (isKing) disc.textContent = "♛";
+        if (ownP && srcKeys.has(`${r},${c}`)) disc.classList.add("can-move");
+        cell.appendChild(disc);
+
+        // Click on own movable piece
+        if (isMyTurn && !state.finished && ownP && srcKeys.has(`${r},${c}`)) {
+          cell.classList.add("clickable");
+          const pMoves = validMoves.filter(m => m.fromRow === r && m.fromCol === c);
+          cell.addEventListener("click", () => handleCheckersSourceClick(r, c, pMoves, state));
+        }
+      }
+
+      // Move-dot on valid destination squares
+      if (!piece && isDark && isMyTurn && !state.finished) {
+        const dk = `${r},${c}`;
+        const allMovesHere = destMap.get(dk);
+        if (allMovesHere) {
+          // Show dot for the selected piece's moves, or all moves if none selected
+          const dotMoves = selMoves
+            ? allMovesHere.filter(m => m.fromRow === selectedPiece.row && m.fromCol === selectedPiece.col)
+            : allMovesHere;
+          if (dotMoves.length > 0) {
+            const dot = document.createElement("div");
+            dot.className = "move-dot" + (selDestSet && selDestSet.has(dk) ? " for-selected" : "");
+            cell.appendChild(dot);
+            cell.classList.add("clickable");
+            const move = dotMoves[0];
+            cell.addEventListener("click", () => handleCheckersDestClick(move));
+          }
+        }
+      }
+
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+async function handleCheckersSourceClick(row, col, pieceMoves, state) {
+  if (pieceMoves.length === 1) {
+    // Exactly one destination — move immediately (one click!)
+    selectedPiece = null;
+    await sendCheckersMove(pieceMoves[0]);
+  } else {
+    // Multiple destinations — toggle selection to reveal them
+    selectedPiece = (selectedPiece && selectedPiece.row === row && selectedPiece.col === col)
+      ? null
+      : { row, col };
+    renderCheckersBoard(state);
+  }
+}
+
+async function handleCheckersDestClick(move) {
+  selectedPiece = null;
+  await sendCheckersMove(move);
+}
+
+async function sendCheckersMove(move) {
+  try {
+    await apiPost("/api/game/checkers/move", {
+      sessionId, roomId,
+      fromRow: move.fromRow, fromCol: move.fromCol,
+      toRow: move.toRow,     toCol: move.toCol
+    });
+  } catch (e) {
+    document.getElementById("statusMsg").textContent = e.message;
+  }
+}
+
+// ── Connect Four board renderer ───────────────────────────────────────
+function renderConnectFourBoard(state) {
+  const boardEl = document.getElementById("board");
+  boardEl.classList.remove("checkers-board");
+  boardEl.classList.add("c4-board");
+  boardEl.innerHTML = "";
+
+  const board = state.board;
+  const rows = board.length;       // 6
+  const cols = board[0].length;    // 7
+  const isMyTurn = state.currentTurn === mySymbol && !state.finished;
+
+  // Column-drop buttons (top row)
+  for (let c = 0; c < cols; c++) {
+    const colFull = board[0][c] !== null;
+    const btn = document.createElement("button");
+    btn.className = "c4-drop-btn";
+    btn.textContent = "▼";
+    btn.disabled = !isMyTurn || colFull;
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        await apiPost("/api/game/connectfour/move", { sessionId, roomId, col: c });
+      } catch (e) {
+        document.getElementById("statusMsg").textContent = e.message;
+        btn.disabled = false;
+      }
+    });
+    boardEl.appendChild(btn);
+  }
+
+  // Board cells (6 rows × 7 cols)
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = document.createElement("div");
+      cell.className = "c4-cell";
+      const val = board[r][c];
+      if (val) {
+        const disc = document.createElement("div");
+        disc.className = "c4-disc " + (val === "Y" ? "c4-yellow" : "c4-red");
+        cell.appendChild(disc);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
 // ── Results ───────────────────────────────────────────────────────────
 async function showResults(state) {
-  const myPid   = mySymbol === "X" ? state.playerX : state.playerO;
-  const isDraw  = state.draw;
-  const iWon    = !isDraw && state.winner === myPid;
+  // playerX = Yellow (Connect Four) / Red (Checkers) / X (TicTacToe)
+  // playerO = Red (Connect Four)    / Black (Checkers) / O (TicTacToe)
+  const myPid = isConnectFour
+    ? (mySymbol === "Y" ? state.playerX : state.playerO)
+    : (mySymbol === "X" || mySymbol === "R") ? state.playerX : state.playerO;
+  const isDraw = state.draw;
+  const iWon   = !isDraw && state.winner === myPid;
 
   document.getElementById("resultEmoji").textContent    = iWon ? "🏆" : isDraw ? "🤝" : "😞";
   const hl = document.getElementById("resultHeadline");

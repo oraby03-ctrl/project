@@ -1,11 +1,12 @@
 package com.webapp.server.domain;
 
 import com.webapp.shared.dto.GameStateView;
+import com.webapp.shared.dto.GameType;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-public class GameRoom {
+public class GameRoom implements IRoom {
     private final String roomId;
     private final String playerX;
     private final String playerXName;
@@ -37,16 +38,24 @@ public class GameRoom {
         this.statusMessage = "Game started";
     }
 
+    @Override
     public String getRoomId() {
         return roomId;
     }
 
+    @Override
     public String getPlayerX() {
         return playerX;
     }
 
+    @Override
     public String getPlayerO() {
         return playerO;
+    }
+
+    @Override
+    public GameType getGameType() {
+        return GameType.TIC_TAC_TOE;
     }
 
     public synchronized MoveOutcome makeMove(String playerId, int row, int col) {

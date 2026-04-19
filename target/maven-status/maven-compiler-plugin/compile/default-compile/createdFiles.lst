@@ -1,10 +1,13 @@
+com\webapp\shared\dto\CheckersMoveRequest.class
 com\webapp\client\application\ClientGameService.class
 com\webapp\server\infrastructure\PersistenceService.class
 com\webapp\server\infrastructure\jpa\PlayerJpaRepository.class
 com\webapp\shared\remote\GameServerRemote.class
+com\webapp\server\domain\ConnectFourRoom.class
 com\webapp\server\presentation\ServerMain.class
 com\webapp\shared\dto\PlayerProfileView.class
 Main.class
+com\webapp\server\domain\IRoom.class
 com\webapp\server\domain\MoveOutcome.class
 com\webapp\server\presentation\WebAppHttpServer.class
 com\webapp\shared\dto\MatchTicket.class
@@ -12,11 +15,13 @@ com\webapp\client\presentation\ClientMain.class
 com\webapp\server\domain\MatchRequest.class
 com\webapp\server\infrastructure\jpa\PlayerEntity.class
 com\webapp\server\infrastructure\jpa\GameRecordJpaRepository.class
+com\webapp\server\domain\CheckersRoom.class
 com\webapp\shared\dto\MoveRequest.class
 com\webapp\server\application\MatchmakingService.class
 com\webapp\server\infrastructure\jdbc\JdbcAuditRepository.class
 com\webapp\shared\dto\MoveResult.class
 com\webapp\server\domain\MatchTicketState.class
+com\webapp\shared\dto\ConnectFourMoveRequest.class
 com\webapp\server\domain\GameRoom.class
 com\webapp\server\domain\PlayerSessionRegistry.class
 com\webapp\client\presentation\ClientController.class

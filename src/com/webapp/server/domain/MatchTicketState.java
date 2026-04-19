@@ -6,6 +6,7 @@ public class MatchTicketState {
     private volatile String roomId;
     private volatile String symbol;
     private volatile String opponent;
+    private volatile String gameType;
 
     public MatchTicketState(String ticketId) {
         this.ticketId = ticketId;
@@ -32,10 +33,15 @@ public class MatchTicketState {
         return opponent;
     }
 
-    public void setMatchedData(String roomId, String symbol, String opponent) {
-        this.roomId = roomId;
-        this.symbol = symbol;
-        this.opponent = opponent;
-        this.matched = true;
+    public String getGameType() {
+        return gameType;
+    }
+
+    public void setMatchedData(String roomId, String symbol, String opponent, String gameType) {
+        this.roomId    = roomId;
+        this.symbol    = symbol;
+        this.opponent  = opponent;
+        this.gameType  = gameType;
+        this.matched   = true;
     }
 }

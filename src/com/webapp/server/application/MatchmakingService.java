@@ -1,6 +1,9 @@
 package com.webapp.server.application;
 
+import com.webapp.server.domain.CheckersRoom;
+import com.webapp.server.domain.ConnectFourRoom;
 import com.webapp.server.domain.GameRoom;
+import com.webapp.server.domain.IRoom;
 import com.webapp.server.domain.MatchRequest;
 import com.webapp.server.domain.MatchTicketState;
 import com.webapp.shared.dto.GameType;
@@ -18,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class MatchmakingService {
     private final Map<GameType, BlockingQueue<MatchRequest>> queues = new EnumMap<>(GameType.class);
     private final Map<String, MatchTicketState> tickets = new ConcurrentHashMap<>();
-    private final Map<String, GameRoom> rooms = new ConcurrentHashMap<>();
+    private final Map<String, IRoom> rooms = new ConcurrentHashMap<>();
     private final Map<String, String> playerToRoom = new ConcurrentHashMap<>();
     private final Set<String> playersQueuing = ConcurrentHashMap.newKeySet();
     private final ExecutorService matcherExecutor = Executors.newSingleThreadExecutor();
@@ -39,7 +42,7 @@ public class MatchmakingService {
         }
         String activeRoomId = playerToRoom.get(playerId);
         if (activeRoomId != null) {
-            GameRoom activeRoom = rooms.get(activeRoomId);
+            IRoom activeRoom = rooms.get(activeRoomId);
             if (activeRoom != null && !activeRoom.isFinished()) {
                 playersQueuing.remove(playerId);
                 throw new IllegalStateException("Already in an active game");
@@ -56,12 +59,12 @@ public class MatchmakingService {
         return tickets.get(ticketId);
     }
 
-    public GameRoom requireRoomByPlayer(String playerId, String roomId) {
+    public IRoom requireRoomByPlayer(String playerId, String roomId) {
         String current = playerToRoom.get(playerId);
         if (current == null || !current.equals(roomId)) {
             throw new IllegalArgumentException("Player is not assigned to room");
         }
-        GameRoom room = rooms.get(roomId);
+        IRoom room = rooms.get(roomId);
         if (room == null) {
             throw new IllegalArgumentException("Room not found");
         }
@@ -107,7 +110,24 @@ public class MatchmakingService {
     private void createRoomForPair(MatchRequest p1, MatchRequest p2) {
         playersQueuing.remove(p1.playerId());
         playersQueuing.remove(p2.playerId());
-        GameRoom room = new GameRoom(p1.playerId(), p1.playerName(), p2.playerId(), p2.playerName());
+
+        IRoom room;
+        String symbol1;
+        String symbol2;
+        if (p1.gameType() == GameType.CHECKERS) {
+            room = new CheckersRoom(p1.playerId(), p1.playerName(), p2.playerId(), p2.playerName());
+            symbol1 = "R"; // p1 is Red
+            symbol2 = "B"; // p2 is Black
+        } else if (p1.gameType() == GameType.CONNECT_FOUR) {
+            room = new ConnectFourRoom(p1.playerId(), p1.playerName(), p2.playerId(), p2.playerName());
+            symbol1 = "Y"; // p1 is Yellow
+            symbol2 = "R"; // p2 is Red
+        } else {
+            room = new GameRoom(p1.playerId(), p1.playerName(), p2.playerId(), p2.playerName());
+            symbol1 = "X";
+            symbol2 = "O";
+        }
+
         rooms.put(room.getRoomId(), room);
         playerToRoom.put(p1.playerId(), room.getRoomId());
         playerToRoom.put(p2.playerId(), room.getRoomId());
@@ -115,10 +135,10 @@ public class MatchmakingService {
         MatchTicketState s1 = tickets.get(p1.ticketId());
         MatchTicketState s2 = tickets.get(p2.ticketId());
         if (s1 != null) {
-            s1.setMatchedData(room.getRoomId(), "X", p2.playerName());
+            s1.setMatchedData(room.getRoomId(), symbol1, p2.playerName(), p1.gameType().name());
         }
         if (s2 != null) {
-            s2.setMatchedData(room.getRoomId(), "O", p1.playerName());
+            s2.setMatchedData(room.getRoomId(), symbol2, p1.playerName(), p1.gameType().name());
         }
     }
 }

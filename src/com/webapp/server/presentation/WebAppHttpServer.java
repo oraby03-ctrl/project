@@ -1,6 +1,8 @@
 package com.webapp.server.presentation;
 
 import com.webapp.server.application.GamePlatformService;
+import com.webapp.shared.dto.CheckersMoveRequest;
+import com.webapp.shared.dto.ConnectFourMoveRequest;
 import com.webapp.shared.dto.GameStateView;
 import com.webapp.shared.dto.GameType;
 import com.webapp.shared.dto.MatchStatus;
@@ -42,6 +44,8 @@ public class WebAppHttpServer {
         httpServer.createContext("/api/match/poll", this::handleMatchPoll);
         httpServer.createContext("/api/game/state", this::handleGameState);
         httpServer.createContext("/api/game/move", this::handleGameMove);
+        httpServer.createContext("/api/game/checkers/move", this::handleCheckersMove);
+        httpServer.createContext("/api/game/connectfour/move", this::handleConnectFourMove);
         httpServer.createContext("/api/game/heartbeat", this::handleHeartbeat);
         httpServer.createContext("/api/game/leave", this::handleLeave);
         httpServer.createContext("/api/scoreboard", this::handleScoreboard);
@@ -178,6 +182,45 @@ public class WebAppHttpServer {
         }
     }
 
+    private void handleConnectFourMove(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            MoveResult result = service.makeConnectFourMove(new ConnectFourMoveRequest(
+                    required(form, "sessionId"),
+                    required(form, "roomId"),
+                    Integer.parseInt(required(form, "col"))
+            ));
+            sendJson(exchange, 200, moveResultToJson(result));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleCheckersMove(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            MoveResult result = service.makeCheckersMove(new CheckersMoveRequest(
+                    required(form, "sessionId"),
+                    required(form, "roomId"),
+                    Integer.parseInt(required(form, "fromRow")),
+                    Integer.parseInt(required(form, "fromCol")),
+                    Integer.parseInt(required(form, "toRow")),
+                    Integer.parseInt(required(form, "toCol"))
+            ));
+            sendJson(exchange, 200, moveResultToJson(result));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
     private void handleGameMove(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             sendJson(exchange, 405, jsonError("Method Not Allowed"));
@@ -300,6 +343,7 @@ public class WebAppHttpServer {
                 + "\"roomId\":" + maybeString(status.roomId()) + ","
                 + "\"symbol\":" + maybeString(status.symbol()) + ","
                 + "\"opponent\":" + maybeString(status.opponent()) + ","
+                + "\"gameType\":" + maybeString(status.gameType()) + ","
                 + "\"message\":\"" + esc(status.message()) + "\"}";
     }
 

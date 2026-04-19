@@ -1,11 +1,16 @@
 package com.webapp.server.application;
 
+import com.webapp.server.domain.CheckersRoom;
+import com.webapp.server.domain.ConnectFourRoom;
 import com.webapp.server.domain.GameRoom;
+import com.webapp.server.domain.IRoom;
 import com.webapp.server.domain.MatchTicketState;
 import com.webapp.server.domain.MoveOutcome;
 import com.webapp.server.domain.PlayerSessionRegistry;
 import com.webapp.server.domain.SessionInfo;
 import com.webapp.server.infrastructure.PersistenceService;
+import com.webapp.shared.dto.CheckersMoveRequest;
+import com.webapp.shared.dto.ConnectFourMoveRequest;
 import com.webapp.shared.dto.GameStateView;
 import com.webapp.shared.dto.GameType;
 import com.webapp.shared.dto.MatchStatus;
@@ -58,8 +63,8 @@ public class GamePlatformService {
     public MatchTicket requestMatch(String sessionId, GameType gameType) {
         String playerId = sessions.requirePlayerId(sessionId);
         String playerName = sessions.requirePlayerName(sessionId);
-        if (gameType != GameType.TIC_TAC_TOE) {
-            return new MatchTicket("", "Only TIC_TAC_TOE is currently implemented");
+        if (gameType == GameType.BATTLESHIP) {
+            return new MatchTicket("", "Battleship is under development");
         }
         String ticketId = matchmaking.enqueue(playerId, playerName, gameType);
         return new MatchTicket(ticketId, "Queued for matchmaking");
@@ -69,18 +74,22 @@ public class GamePlatformService {
         sessions.requireSession(sessionId);
         MatchTicketState ticket = matchmaking.getTicketState(ticketId);
         if (ticket == null) {
-            return new MatchStatus(false, null, null, null, "Ticket not found");
+            return new MatchStatus(false, null, null, null, "Ticket not found", null);
         }
         if (!ticket.isMatched()) {
-            return new MatchStatus(false, null, null, null, "Waiting for another player...");
+            return new MatchStatus(false, null, null, null, "Waiting for another player...", null);
         }
-        return new MatchStatus(true, ticket.getRoomId(), ticket.getSymbol(), ticket.getOpponent(), "Match found");
+        return new MatchStatus(true, ticket.getRoomId(), ticket.getSymbol(), ticket.getOpponent(), "Match found", ticket.getGameType());
     }
 
     public MoveResult makeMove(MoveRequest moveRequest) {
         String playerId = sessions.requirePlayerId(moveRequest.sessionId());
-        GameRoom room = matchmaking.requireRoomByPlayer(playerId, moveRequest.roomId());
-        room.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
+        IRoom iRoom = matchmaking.requireRoomByPlayer(playerId, moveRequest.roomId());
+        iRoom.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
+
+        if (!(iRoom instanceof GameRoom room)) {
+            return new MoveResult(false, "Use the checkers move endpoint for this game");
+        }
 
         MoveOutcome outcome = room.makeMove(playerId, moveRequest.row(), moveRequest.col());
         if (!outcome.accepted()) {
@@ -95,9 +104,31 @@ public class GamePlatformService {
         return new MoveResult(true, outcome.message());
     }
 
+    public MoveResult makeCheckersMove(CheckersMoveRequest req) {
+        String playerId = sessions.requirePlayerId(req.sessionId());
+        IRoom iRoom = matchmaking.requireRoomByPlayer(playerId, req.roomId());
+        iRoom.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
+
+        if (!(iRoom instanceof CheckersRoom room)) {
+            return new MoveResult(false, "This room is not a Checkers game");
+        }
+
+        MoveOutcome outcome = room.makeMove(playerId, req.fromRow(), req.fromCol(), req.toRow(), req.toCol());
+        if (!outcome.accepted()) {
+            return new MoveResult(false, outcome.message());
+        }
+
+        String symbol = room.symbolFor(playerId);
+        persistenceService.logMove(room.getRoomId(), outcome.moveNumber(), playerId, symbol,
+                req.toRow(), req.toCol());
+
+        persistIfFinished(room);
+        return new MoveResult(true, outcome.message());
+    }
+
     public GameStateView getGameState(String sessionId, String roomId) {
         String playerId = sessions.requirePlayerId(sessionId);
-        GameRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
+        IRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
         room.touch(playerId);
         room.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
         persistIfFinished(room);
@@ -106,7 +137,7 @@ public class GamePlatformService {
 
     public void heartbeat(String sessionId, String roomId) {
         String playerId = sessions.requirePlayerId(sessionId);
-        GameRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
+        IRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
         room.touch(playerId);
         room.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
         persistIfFinished(room);
@@ -114,7 +145,7 @@ public class GamePlatformService {
 
     public void leaveGame(String sessionId, String roomId) {
         String playerId = sessions.requirePlayerId(sessionId);
-        GameRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
+        IRoom room = matchmaking.requireRoomByPlayer(playerId, roomId);
         room.forfeit(playerId);
         persistIfFinished(room);
     }
@@ -123,20 +154,40 @@ public class GamePlatformService {
         return sessions.requireSession(sessionId);
     }
 
+    public MoveResult makeConnectFourMove(ConnectFourMoveRequest req) {
+        String playerId = sessions.requirePlayerId(req.sessionId());
+        IRoom iRoom = matchmaking.requireRoomByPlayer(playerId, req.roomId());
+        iRoom.applyDisconnectForfeitIfNeeded(HEARTBEAT_TIMEOUT_MS);
+
+        if (!(iRoom instanceof ConnectFourRoom room)) {
+            return new MoveResult(false, "This room is not a Connect Four game");
+        }
+
+        MoveOutcome outcome = room.makeMove(playerId, req.col());
+        if (!outcome.accepted()) {
+            return new MoveResult(false, outcome.message());
+        }
+
+        String symbol = room.symbolFor(playerId);
+        persistenceService.logMove(room.getRoomId(), outcome.moveNumber(), playerId, symbol, 0, req.col());
+        persistIfFinished(room);
+        return new MoveResult(true, outcome.message());
+    }
+
     public List<GameType> listSupportedGames() {
-        return Arrays.asList(GameType.values());
+        return Arrays.asList(GameType.TIC_TAC_TOE, GameType.CHECKERS, GameType.CONNECT_FOUR);
     }
 
     public List<PlayerProfileView> getScoreboard() {
         return persistenceService.getScoreboard();
     }
 
-    private void persistIfFinished(GameRoom room) {
+    private void persistIfFinished(IRoom room) {
         if (room.markPersistedIfNeeded()) {
             GameStateView state = room.snapshot();
             persistenceService.persistFinishedGame(
                     room.getRoomId(),
-                    GameType.TIC_TAC_TOE.name(),
+                    room.getGameType().name(),
                     room.getPlayerX(),
                     room.getPlayerO(),
                     state.winner(),
