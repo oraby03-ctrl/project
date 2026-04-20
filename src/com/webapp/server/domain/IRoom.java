@@ -15,4 +15,6 @@ public interface IRoom {
     GameStateView snapshot();
     boolean markPersistedIfNeeded();
     int getMoveCount();
+    boolean isAdminEnded();
+    void setAdminEnded();
 }

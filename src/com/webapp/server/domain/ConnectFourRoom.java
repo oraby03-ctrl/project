@@ -23,6 +23,7 @@ public class ConnectFourRoom implements IRoom {
     private boolean finished;
     private int moveCount;
     private boolean persisted;
+    private boolean adminEnded;
 
     private long lastSeenYellow;
     private long lastSeenRed;
@@ -76,6 +77,10 @@ public class ConnectFourRoom implements IRoom {
     @Override
     public synchronized void forfeit(String quittingPlayerId) {
         if (finished) return;
+        if (adminEnded) {
+            finished = true;
+            return; // no winner — admin-terminated
+        }
         if (playerYellow.equals(quittingPlayerId)) winner = playerRed;
         else if (playerRed.equals(quittingPlayerId)) winner = playerYellow;
         finished = true;
@@ -97,6 +102,12 @@ public class ConnectFourRoom implements IRoom {
         persisted = true;
         return true;
     }
+
+    @Override
+    public synchronized boolean isAdminEnded() { return adminEnded; }
+
+    @Override
+    public synchronized void setAdminEnded() { adminEnded = true; }
 
     // ── Move ──────────────────────────────────────────────────────────
 
@@ -165,6 +176,7 @@ public class ConnectFourRoom implements IRoom {
     }
 
     private String buildStatus() {
+        if (adminEnded) return "Game terminated by admin";
         if (finished) {
             if (winner != null) {
                 String name = winner.equals(playerYellow) ? playerYellowName : playerRedName;

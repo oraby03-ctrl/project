@@ -29,6 +29,12 @@ public class PlayerEntity {
     @Column(nullable = false)
     private int draws;
 
+    @Column(length = 64)
+    private String passwordHash;
+
+    @Column(length = 32)
+    private String passwordSalt;
+
     public PlayerEntity() {
     }
 
@@ -38,6 +44,16 @@ public class PlayerEntity {
         this.wins = 0;
         this.losses = 0;
         this.draws = 0;
+    }
+
+    public PlayerEntity(String playerId, String playerName, String passwordHash, String passwordSalt) {
+        this.playerId = playerId;
+        this.playerName = playerName;
+        this.wins = 0;
+        this.losses = 0;
+        this.draws = 0;
+        this.passwordHash = passwordHash;
+        this.passwordSalt = passwordSalt;
     }
 
     public Long getId() {
@@ -64,8 +80,24 @@ public class PlayerEntity {
         return draws;
     }
 
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public String getPasswordSalt() {
+        return passwordSalt;
+    }
+
     public void setPlayerName(String playerName) {
         this.playerName = playerName;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void setPasswordSalt(String passwordSalt) {
+        this.passwordSalt = passwordSalt;
     }
 
     public void incrementWin() {
@@ -78,5 +110,11 @@ public class PlayerEntity {
 
     public void incrementDraw() {
         draws++;
+    }
+
+    public void resetStats() {
+        wins = 0;
+        losses = 0;
+        draws = 0;
     }
 }

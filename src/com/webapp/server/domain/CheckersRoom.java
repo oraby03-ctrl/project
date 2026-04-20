@@ -49,6 +49,7 @@ public class CheckersRoom implements IRoom {
     private boolean finished;
     private int moveCount;
     private boolean persisted;
+    private boolean adminEnded;
     private long lastSeenRed;
     private long lastSeenBlack;
     private String statusMessage;
@@ -136,6 +137,11 @@ public class CheckersRoom implements IRoom {
     @Override
     public synchronized void forfeit(String quittingPlayerId) {
         if (finished) return;
+        if (adminEnded) {
+            statusMessage = "Game terminated by admin";
+            finished = true;
+            return;
+        }
         if (playerRed.equals(quittingPlayerId)) {
             winner = playerBlack;
             statusMessage = playerRedName + " left — forfeit";
@@ -169,6 +175,12 @@ public class CheckersRoom implements IRoom {
         persisted = true;
         return true;
     }
+
+    @Override
+    public synchronized boolean isAdminEnded() { return adminEnded; }
+
+    @Override
+    public synchronized void setAdminEnded() { adminEnded = true; }
 
     // ── Move logic ────────────────────────────────────────────────────
 

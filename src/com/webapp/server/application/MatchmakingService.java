@@ -71,6 +71,23 @@ public class MatchmakingService {
         return room;
     }
 
+    /** Returns a snapshot of every room currently tracked (finished or not). */
+    public java.util.List<IRoom> getAllRooms() {
+        return new java.util.ArrayList<>(rooms.values());
+    }
+
+    /** Force-ends a room by forfeiting both players (admin kick). */
+    public void forceEndRoom(String roomId) {
+        IRoom room = rooms.get(roomId);
+        if (room == null) {
+            throw new IllegalArgumentException("Room not found: " + roomId);
+        }
+        if (!room.isFinished()) {
+            room.setAdminEnded();
+            room.forfeit(room.getPlayerX()); // marks room finished, playerO wins — but no stats saved
+        }
+    }
+
     private void matchLoop() {
         try {
             while (!Thread.currentThread().isInterrupted()) {

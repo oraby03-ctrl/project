@@ -14,6 +14,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Collections;
 
 public class ServerMain {
@@ -38,10 +40,21 @@ public class ServerMain {
             WebAppHttpServer webServer = new WebAppHttpServer(gamePlatformService);
             webServer.start(8080);
 
+            // Start RMI server
+            int rmiPort = 1099;
+            Registry rmiRegistry = LocateRegistry.createRegistry(rmiPort);
+            RmiGameServer rmiServer = new RmiGameServer(gamePlatformService);
+            rmiRegistry.rebind(BINDING_NAME, rmiServer);
+
+            // Ensure the built-in admin account always exists with a default password.
+            // The password is only set if the account has none yet (first run).
+            persistenceService.ensurePlayerWithPassword("admin", "admin", "admin");
+
             System.out.println("==============================================");
             System.out.println(" Game server running on port 8080");
             System.out.println("----------------------------------------------");
             System.out.println(" Local:   http://localhost:8080");
+            System.out.println(" RMI:     rmi://localhost:1099/" + BINDING_NAME);
             printLanAddresses(8080);
 
             // Start ngrok and print the public URL

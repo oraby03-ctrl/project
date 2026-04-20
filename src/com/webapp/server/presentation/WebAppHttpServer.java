@@ -37,6 +37,7 @@ public class WebAppHttpServer {
     public void start(int port) throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(port), 0);
         httpServer.createContext("/", this::handleIndex);
+        httpServer.createContext("/api/register", this::handleRegister);
         httpServer.createContext("/api/login", this::handleLogin);
         httpServer.createContext("/api/profile", this::handleProfile);
         httpServer.createContext("/api/games", this::handleGames);
@@ -49,6 +50,11 @@ public class WebAppHttpServer {
         httpServer.createContext("/api/game/heartbeat", this::handleHeartbeat);
         httpServer.createContext("/api/game/leave", this::handleLeave);
         httpServer.createContext("/api/scoreboard", this::handleScoreboard);
+        httpServer.createContext("/api/admin/delete-player", this::handleAdminDeletePlayer);
+        httpServer.createContext("/api/admin/reset-stats", this::handleAdminResetStats);
+        httpServer.createContext("/api/admin/rooms", this::handleAdminRooms);
+        httpServer.createContext("/api/admin/force-end-room", this::handleAdminForceEndRoom);
+        httpServer.createContext("/api/admin/recent-games", this::handleAdminRecentGames);
         httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
     }
@@ -77,6 +83,28 @@ public class WebAppHttpServer {
         }
     }
 
+    private void handleRegister(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            String playerId   = required(form, "playerId");
+            String playerName = required(form, "playerName");
+            String password   = required(form, "password");
+
+            RegisterResponse registerResponse = service.createAccount(playerId, playerName, password);
+            PlayerProfileView profile = service.getProfile(registerResponse.sessionId());
+            String body = "{\"sessionId\":\"" + esc(registerResponse.sessionId()) + "\","
+                    + "\"playerName\":\"" + esc(registerResponse.username()) + "\","
+                    + "\"profile\":" + profileToJson(profile) + "}";
+            sendJson(exchange, 200, body);
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
     private void handleLogin(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             sendJson(exchange, 405, jsonError("Method Not Allowed"));
@@ -85,9 +113,9 @@ public class WebAppHttpServer {
         try {
             Map<String, String> form = parseFormBody(exchange);
             String playerId = required(form, "playerId");
-            String playerName = required(form, "playerName");
+            String password = required(form, "password");
 
-            RegisterResponse registerResponse = service.registerPlayer(playerId, playerName);
+            RegisterResponse registerResponse = service.loginPlayer(playerId, password);
             PlayerProfileView profile = service.getProfile(registerResponse.sessionId());
             String body = "{\"sessionId\":\"" + esc(registerResponse.sessionId()) + "\","
                     + "\"playerName\":\"" + esc(registerResponse.username()) + "\","
@@ -282,6 +310,122 @@ public class WebAppHttpServer {
             }
             sb.append("]}");
             sendJson(exchange, 200, sb.toString());
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleAdminDeletePlayer(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            String adminSessionId = required(form, "sessionId");
+            String targetPlayerId = required(form, "targetPlayerId");
+            service.deletePlayer(adminSessionId, targetPlayerId);
+            sendJson(exchange, 200, "{\"ok\":true}");
+        } catch (SecurityException ex) {
+            sendJson(exchange, 403, jsonError(ex.getMessage()));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleAdminResetStats(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            service.resetPlayerStats(required(form, "sessionId"), required(form, "targetPlayerId"));
+            sendJson(exchange, 200, "{\"ok\":true}");
+        } catch (SecurityException ex) {
+            sendJson(exchange, 403, jsonError(ex.getMessage()));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleAdminRooms(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            String sessionId = required(parseQuery(exchange), "sessionId");
+            var rooms = service.getActiveRooms(sessionId);
+            StringBuilder sb = new StringBuilder("{\"rooms\":[");
+            for (int i = 0; i < rooms.size(); i++) {
+                if (i > 0) sb.append(',');
+                var r = rooms.get(i);
+                sb.append("{");
+                sb.append("\"roomId\":\"").append(esc((String) r.get("roomId"))).append("\",");
+                sb.append("\"gameType\":\"").append(esc((String) r.get("gameType"))).append("\",");
+                sb.append("\"playerX\":\"").append(esc((String) r.get("playerX"))).append("\",");
+                sb.append("\"playerO\":\"").append(esc((String) r.get("playerO"))).append("\",");
+                sb.append("\"finished\":").append(r.get("finished")).append(",");
+                sb.append("\"winner\":").append(maybeString((String) r.get("winner"))).append(",");
+                sb.append("\"draw\":").append(r.get("draw"));
+                sb.append("}");
+            }
+            sb.append("]}");
+            sendJson(exchange, 200, sb.toString());
+        } catch (SecurityException ex) {
+            sendJson(exchange, 403, jsonError(ex.getMessage()));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleAdminForceEndRoom(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> form = parseFormBody(exchange);
+            service.forceEndRoom(required(form, "sessionId"), required(form, "roomId"));
+            sendJson(exchange, 200, "{\"ok\":true}");
+        } catch (SecurityException ex) {
+            sendJson(exchange, 403, jsonError(ex.getMessage()));
+        } catch (Exception ex) {
+            sendJson(exchange, 400, jsonError(ex.getMessage()));
+        }
+    }
+
+    private void handleAdminRecentGames(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendJson(exchange, 405, jsonError("Method Not Allowed"));
+            return;
+        }
+        try {
+            Map<String, String> q = parseQuery(exchange);
+            String sessionId = required(q, "sessionId");
+            int limit = 50;
+            try { limit = Integer.parseInt(q.getOrDefault("limit", "50")); } catch (NumberFormatException ignored) {}
+            if (limit < 1 || limit > 200) limit = 50;
+            var games = service.getRecentGames(sessionId, limit);
+            StringBuilder sb = new StringBuilder("{\"games\":[");
+            for (int i = 0; i < games.size(); i++) {
+                if (i > 0) sb.append(',');
+                var g = games.get(i);
+                sb.append("{");
+                sb.append("\"roomId\":\"").append(esc(g.getRoomId())).append("\",");
+                sb.append("\"gameType\":\"").append(esc(g.getGameType())).append("\",");
+                sb.append("\"playerX\":\"").append(esc(g.getPlayerX())).append("\",");
+                sb.append("\"playerO\":\"").append(esc(g.getPlayerO())).append("\",");
+                sb.append("\"winner\":").append(maybeString(g.getWinner())).append(",");
+                sb.append("\"draw\":").append(g.isDraw()).append(",");
+                sb.append("\"finishedAt\":\"").append(esc(g.getFinishedAt().toString())).append("\"");
+                sb.append("}");
+            }
+            sb.append("]}");
+            sendJson(exchange, 200, sb.toString());
+        } catch (SecurityException ex) {
+            sendJson(exchange, 403, jsonError(ex.getMessage()));
         } catch (Exception ex) {
             sendJson(exchange, 400, jsonError(ex.getMessage()));
         }

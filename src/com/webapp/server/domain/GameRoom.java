@@ -19,6 +19,7 @@ public class GameRoom implements IRoom {
     private boolean finished;
     private int moveCount;
     private boolean persisted;
+    private boolean adminEnded;
     private long lastSeenX;
     private long lastSeenO;
     private String statusMessage;
@@ -135,6 +136,11 @@ public class GameRoom implements IRoom {
         if (finished) {
             return;
         }
+        if (adminEnded) {
+            statusMessage = "Game terminated by admin";
+            finished = true;
+            return;
+        }
         if (playerX.equals(quittingPlayerId)) {
             winnerSymbol = "O";
             statusMessage = "Player " + playerXName + " left and lost by forfeit";
@@ -179,13 +185,6 @@ public class GameRoom implements IRoom {
         return finished;
     }
 
-    public synchronized String winnerName() {
-        if (winnerSymbol == null) {
-            return null;
-        }
-        return "X".equals(winnerSymbol) ? playerX : playerO;
-    }
-
     public synchronized int getMoveCount() {
         return moveCount;
     }
@@ -197,6 +196,12 @@ public class GameRoom implements IRoom {
         persisted = true;
         return true;
     }
+
+    @Override
+    public synchronized boolean isAdminEnded() { return adminEnded; }
+
+    @Override
+    public synchronized void setAdminEnded() { adminEnded = true; }
 
     private boolean isWinner(String symbol) {
         for (int i = 0; i < 3; i++) {

@@ -49,4 +49,12 @@ public class GameRecordEntity {
         this.draw = draw;
         this.finishedAt = Instant.now();
     }
+
+    public String getRoomId()     { return roomId; }
+    public String getGameType()   { return gameType; }
+    public String getPlayerX()    { return playerX; }
+    public String getPlayerO()    { return playerO; }
+    public String getWinner()     { return winner; }
+    public boolean isDraw()       { return draw; }
+    public Instant getFinishedAt(){ return finishedAt; }
 }

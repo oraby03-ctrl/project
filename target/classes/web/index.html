@@ -251,7 +251,86 @@
     .medal-2 { color: #c0c0c0; }
     .medal-3 { color: #cd7f32; }
 
-    /* ── GAME PAGE ────────────────────────────────────────────── */
+    /* ── ADMIN PANEL ──────────────────────────────────────────── */
+    #adminPanel {
+      max-width: 960px;
+      margin: 20px auto 0;
+      padding: 0 20px 32px;
+    }
+    .admin-card {
+      background: var(--surface);
+      border: 1px solid #c0392b55;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .admin-card .panel-header {
+      padding: 14px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #ff6b6b;
+      border-bottom: 1px solid #c0392b55;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .admin-card .panel-header span { flex: 1; }
+    /* tabs */
+    .admin-tabs {
+      display: flex;
+      gap: 2px;
+      background: #111c2e;
+      padding: 8px 12px 0;
+      border-bottom: 1px solid #c0392b33;
+    }
+    .admin-tab {
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #7a9bbf;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      user-select: none;
+    }
+    .admin-tab:hover { color: #fff; }
+    .admin-tab.active {
+      background: var(--surface);
+      color: #ff6b6b;
+      border-color: #c0392b55;
+    }
+    .admin-tab-panel { display: none; padding: 16px; }
+    .admin-tab-panel.active { display: block; }
+    /* tables */
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; color: #ffffff; }
+    .admin-table th {
+      padding: 8px 14px;
+      text-align: left;
+      color: #a8c0d8;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #1c2e47;
+    }
+    .admin-table td { padding: 9px 14px; border-top: 1px solid var(--border); vertical-align: middle; }
+    .admin-table tr:hover td { background: rgba(255,255,255,0.05); }
+    /* action buttons */
+    .btn-delete  { background:#c0392b; color:#fff; border:none; border-radius:4px; padding:3px 10px; font-size:0.78rem; cursor:pointer; }
+    .btn-delete:hover  { background:#e74c3c; }
+    .btn-reset   { background:#e67e22; color:#fff; border:none; border-radius:4px; padding:3px 10px; font-size:0.78rem; cursor:pointer; }
+    .btn-reset:hover   { background:#f39c12; }
+    .btn-kick    { background:#8e44ad; color:#fff; border:none; border-radius:4px; padding:3px 10px; font-size:0.78rem; cursor:pointer; }
+    .btn-kick:hover    { background:#9b59b6; }
+    .admin-actions { display:flex; gap:4px; flex-wrap:wrap; }
+    .admin-msg { padding: 6px 0 2px; font-size: 0.85rem; min-height: 24px; }
+    .admin-msg.ok  { color: #00e696; }
+    .admin-msg.err { color: #ff6b6b; }
+    .status-badge { font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:600; }
+
+    .badge-live     { background:#c0392b33; color:#ff6b6b; }
+    .badge-finished { background:#1c4a2e; color:#00e696; }
     #page-game { flex-direction: column; }
 
     .game-body {
@@ -541,6 +620,32 @@
       .cell { width: 76px; height: 76px; }
       .welcome-box, .result-box { padding: 32px 22px; }
     }
+
+    /* ── AUTH TABS ────────────────────────────────────────────── */
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+      margin-top: 4px;
+    }
+    .auth-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      user-select: none;
+    }
+    .auth-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .auth-panel { display: none; }
+    .auth-panel.active { display: block; }
   </style>
 </head>
 <body>
@@ -549,17 +654,49 @@
 <div id="page-welcome" class="page active">
   <div class="welcome-box">
     <div class="logo">🎮 GameHub</div>
-    <div class="tagline">Sign in to join the arena</div>
-    <div class="field">
-      <label>Player ID</label>
-      <input id="playerId" placeholder="e.g. p001" autocomplete="username" />
+    <div class="tagline">Your multiplayer arena</div>
+
+    <!-- Tab bar -->
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login-btn">Sign In</div>
+      <div class="auth-tab" id="tab-register-btn">Register</div>
     </div>
-    <div class="field">
-      <label>Display Name</label>
-      <input id="playerName" placeholder="e.g. Alice" autocomplete="nickname" />
+
+    <!-- Login panel -->
+    <div class="auth-panel active" id="auth-panel-login">
+      <div class="field">
+        <label>Player ID</label>
+        <input id="loginPlayerId" placeholder="e.g. p001" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <button class="btn btn-primary" id="loginBtn">Sign In →</button>
+      <div class="err-msg" id="loginErr"></div>
     </div>
-    <button class="btn btn-primary" id="loginBtn">Sign In →</button>
-    <div class="err-msg" id="loginErr"></div>
+
+    <!-- Register panel -->
+    <div class="auth-panel" id="auth-panel-register">
+      <div class="field">
+        <label>Player ID</label>
+        <input id="regPlayerId" placeholder="e.g. p001 (3–24 chars)" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Display Name</label>
+        <input id="regPlayerName" placeholder="e.g. Alice" autocomplete="nickname" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="regPassword" type="password" placeholder="Min. 6 characters" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label>Confirm Password</label>
+        <input id="regPasswordConfirm" type="password" placeholder="Repeat password" autocomplete="new-password" />
+      </div>
+      <button class="btn btn-primary" id="registerBtn">Create Account →</button>
+      <div class="err-msg" id="registerErr"></div>
+    </div>
   </div>
 </div>
 
@@ -569,12 +706,13 @@
     <span class="nav-logo">🎮 GameHub</span>
     <div class="nav-user">
       <span>Signed in as <strong id="navName"></strong></span>
+      <button class="btn btn-secondary" id="logoutBtn" style="padding:4px 14px;font-size:0.82rem;">Sign Out</button>
     </div>
   </nav>
   <div class="lobby-body">
     <!-- left: games -->
     <div>
-      <div class="section-title">Choose a game</div>
+      <div class="section-title" id="chooseGameTitle">Choose a game</div>
       <div class="game-grid" id="gameGrid"></div>
       <div class="err-msg" id="lobbyErr"></div>
     </div>
@@ -598,6 +736,62 @@
         </thead>
         <tbody id="scoreBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Admin panel — only visible when logged in as "admin" -->
+  <div id="adminPanel" style="display:none;">
+    <div class="admin-card">
+      <div class="panel-header">
+        <span>🛡 Admin Panel</span>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.8rem;" id="refreshAdminBtn">↻ Refresh</button>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="admin-tabs">
+        <div class="admin-tab active" data-tab="tab-players">👥 Players</div>
+        <div class="admin-tab" data-tab="tab-rooms">🎮 Live Rooms</div>
+        <div class="admin-tab" data-tab="tab-history">📋 Game History</div>
+      </div>
+
+      <!-- Tab: Players -->
+      <div class="admin-tab-panel active" id="tab-players">
+        <div class="admin-msg" id="adminMsgPlayers"></div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>W</th><th>D</th><th>L</th><th>Pts</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="adminPlayerBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Tab: Live Rooms -->
+      <div class="admin-tab-panel" id="tab-rooms">
+        <div class="admin-msg" id="adminMsgRooms"></div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Room ID</th><th>Game</th><th>Player X</th><th>Player O</th><th>Status</th><th>Result</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="adminRoomsBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Tab: Game History -->
+      <div class="admin-tab-panel" id="tab-history">
+        <div class="admin-msg" id="adminMsgHistory"></div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Room ID</th><th>Game</th><th>Player X</th><th>Player O</th><th>Winner</th><th>Draw</th><th>Finished At</th>
+            </tr>
+          </thead>
+          <tbody id="adminHistoryBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -698,25 +892,86 @@ function showPage(id) {
   document.getElementById(id).classList.add("active");
 }
 
-// ── Welcome ──────────────────────────────────────────────────────────
+// ── Logout ───────────────────────────────────────────────────────────
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionId    = null;
+  myPlayerId   = null;
+  myPlayerName = null;
+  mySymbol     = null;
+  roomId       = null;
+  clearInterval(matchPollTimer);
+  clearInterval(statePollTimer);
+  clearInterval(heartbeatTimer);
+  stopRoomsAutoRefresh();
+  document.getElementById("adminPanel").style.display = "none";
+  document.getElementById("navName").textContent = "";
+  showPage("page-welcome");
+});
+
+// ── Auth tabs ────────────────────────────────────────────────────────
+document.getElementById("tab-login-btn").addEventListener("click", () => switchAuthTab("login"));
+document.getElementById("tab-register-btn").addEventListener("click", () => switchAuthTab("register"));
+
+function switchAuthTab(tab) {
+  const isLogin = tab === "login";
+  document.getElementById("tab-login-btn").classList.toggle("active", isLogin);
+  document.getElementById("tab-register-btn").classList.toggle("active", !isLogin);
+  document.getElementById("auth-panel-login").classList.toggle("active", isLogin);
+  document.getElementById("auth-panel-register").classList.toggle("active", !isLogin);
+  document.getElementById("loginErr").textContent = "";
+  document.getElementById("registerErr").textContent = "";
+}
+
+// ── Login ────────────────────────────────────────────────────────────
 document.getElementById("loginBtn").addEventListener("click", doLogin);
-document.getElementById("playerName").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("loginPassword").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
 
 async function doLogin() {
-  const playerId   = document.getElementById("playerId").value.trim();
-  const playerName = document.getElementById("playerName").value.trim();
-  const errEl      = document.getElementById("loginErr");
+  const playerId  = document.getElementById("loginPlayerId").value.trim();
+  const password  = document.getElementById("loginPassword").value;
+  const errEl     = document.getElementById("loginErr");
   errEl.textContent = "";
   try {
-    const res = await apiPost("/api/login", { playerId, playerName });
-    sessionId    = res.sessionId;
-    myPlayerId   = res.profile.playerId;
-    myPlayerName = res.playerName;
-    document.getElementById("navName").textContent = myPlayerName;
-    showPage("page-lobby");
-    await loadLobby();
+    const res = await apiPost("/api/login", { playerId, password });
+    onAuthSuccess(res);
   } catch (e) {
     errEl.textContent = e.message;
+  }
+}
+
+// ── Register ─────────────────────────────────────────────────────────
+document.getElementById("registerBtn").addEventListener("click", doRegister);
+document.getElementById("regPasswordConfirm").addEventListener("keydown", e => { if (e.key === "Enter") doRegister(); });
+
+async function doRegister() {
+  const playerId        = document.getElementById("regPlayerId").value.trim();
+  const playerName      = document.getElementById("regPlayerName").value.trim();
+  const password        = document.getElementById("regPassword").value;
+  const passwordConfirm = document.getElementById("regPasswordConfirm").value;
+  const errEl           = document.getElementById("registerErr");
+  errEl.textContent = "";
+  if (password !== passwordConfirm) {
+    errEl.textContent = "Passwords do not match";
+    return;
+  }
+  try {
+    const res = await apiPost("/api/register", { playerId, playerName, password });
+    onAuthSuccess(res);
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function onAuthSuccess(res) {
+  sessionId    = res.sessionId;
+  myPlayerId   = res.profile.playerId;
+  myPlayerName = res.playerName;
+  document.getElementById("navName").textContent = myPlayerName;
+  showPage("page-lobby");
+  loadLobby();
+  if (myPlayerId === "admin") {
+    document.getElementById("adminPanel").style.display = "block";
+    loadAdminAll();
   }
 }
 
@@ -727,6 +982,14 @@ const GAME_META = {
 };
 
 async function loadLobby() {
+  if (myPlayerId === "admin") {
+    // Admin cannot play — hide the section title and game grid
+    document.getElementById("chooseGameTitle").style.display = "none";
+    document.getElementById("gameGrid").innerHTML = "";
+    await loadScoreboard();
+    return;
+  }
+  document.getElementById("chooseGameTitle").style.display = "";
   await Promise.all([loadGames(), loadScoreboard()]);
 }
 
@@ -785,6 +1048,192 @@ async function loadScoreboard() {
 }
 
 document.getElementById("refreshScoreBtn").addEventListener("click", loadScoreboard);
+
+// ── Admin panel ───────────────────────────────────────────────────────
+function adminMsg(tabId, text, isErr) {
+  const el = document.getElementById("adminMsg" + tabId);
+  if (!el) return;
+  el.textContent = text;
+  el.className = "admin-msg " + (isErr ? "err" : text ? "ok" : "");
+}
+
+// Tab switching
+document.querySelectorAll(".admin-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".admin-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".admin-tab-panel").forEach(p => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
+
+// ── Players tab ──────────────────────────────────────────────────────
+async function loadAdminPlayers() {
+  adminMsg("Players", "");
+  const tbody = document.getElementById("adminPlayerBody");
+  try {
+    const data = await apiGet("/api/scoreboard");
+    // include admin row by fetching all players (scoreboard already excludes admin, so we load all via a separate call — but we reuse scoreboard and prepend a dummy admin row)
+    tbody.innerHTML = "";
+    data.scoreboard.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family:monospace;font-size:0.82rem;">${esc(p.playerId)}</td>
+        <td>${esc(p.playerName)}</td>
+        <td>${p.wins}</td><td>${p.draws}</td><td>${p.losses}</td><td>${p.score}</td>
+        <td>
+          <div class="admin-actions">
+            <button class="btn-reset"  data-id="${esc(p.playerId)}" data-action="reset">↺ Reset Stats</button>
+            <button class="btn-delete" data-id="${esc(p.playerId)}" data-action="delete">🗑 Delete</button>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const pid = btn.dataset.id;
+        if (btn.dataset.action === "delete")  adminDeletePlayer(pid);
+        if (btn.dataset.action === "reset")   adminResetStats(pid);
+      });
+    });
+  } catch (e) {
+    adminMsg("Players", e.message, true);
+  }
+}
+
+async function adminDeletePlayer(targetPlayerId) {
+  adminMsg("Players", "");
+  if (!confirm(`Delete player "${targetPlayerId}"? This cannot be undone.`)) return;
+  try {
+    await apiPost("/api/admin/delete-player", { sessionId, targetPlayerId });
+    adminMsg("Players", `Player "${targetPlayerId}" deleted.`);
+    await loadAdminPlayers();
+    await loadScoreboard();
+  } catch (e) {
+    adminMsg("Players", e.message, true);
+  }
+}
+
+async function adminResetStats(targetPlayerId) {
+  adminMsg("Players", "");
+  if (!confirm(`Reset stats for "${targetPlayerId}"? This cannot be undone.`)) return;
+  try {
+    await apiPost("/api/admin/reset-stats", { sessionId, targetPlayerId });
+    adminMsg("Players", `Stats for "${targetPlayerId}" reset to zero.`);
+    await loadAdminPlayers();
+    await loadScoreboard();
+  } catch (e) {
+    adminMsg("Players", e.message, true);
+  }
+}
+
+// ── Live Rooms tab (auto-refreshes every 5 s while on this tab) ─────
+let roomsRefreshTimer = null;
+
+function startRoomsAutoRefresh() {
+  if (roomsRefreshTimer) return;
+  roomsRefreshTimer = setInterval(loadAdminRooms, 2000);
+}
+
+function stopRoomsAutoRefresh() {
+  clearInterval(roomsRefreshTimer);
+  roomsRefreshTimer = null;
+}
+
+async function loadAdminRooms() {
+  adminMsg("Rooms", "");
+  const tbody = document.getElementById("adminRoomsBody");
+  try {
+    const data = await apiGet(`/api/admin/rooms?sessionId=${enc(sessionId)}`);
+    tbody.innerHTML = "";
+    if (!data.rooms.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px;">No rooms yet.</td></tr>';
+      return;
+    }
+    data.rooms.forEach(r => {
+      const live     = !r.finished;
+      const badge    = live ? '<span class="status-badge badge-live">● LIVE</span>'
+                            : '<span class="status-badge badge-finished">✔ Done</span>';
+      const result   = r.draw ? 'Draw' : (r.winner ? r.winner : '—');
+      const kickBtn  = live
+        ? `<button class="btn-kick" data-roomid="${esc(r.roomId)}">⛔ End Room</button>`
+        : '<span style="color:var(--muted);font-size:0.78rem;">—</span>';
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family:monospace;font-size:0.78rem;">${esc(r.roomId.substring(0,8))}…</td>
+        <td>${esc(r.gameType)}</td>
+        <td>${esc(r.playerX)}</td>
+        <td>${esc(r.playerO)}</td>
+        <td>${badge}</td>
+        <td>${esc(result)}</td>
+        <td>${kickBtn}</td>`;
+      tbody.appendChild(tr);
+    });
+    tbody.querySelectorAll(".btn-kick").forEach(btn => {
+      btn.addEventListener("click", () => adminForceEndRoom(btn.dataset.roomid));
+    });
+  } catch (e) {
+    adminMsg("Rooms", e.message, true);
+  }
+}
+
+async function adminForceEndRoom(roomId) {
+  if (!confirm("Terminate this room? The game will end with no winner and no stats will be recorded.")) return;
+  try {
+    await apiPost("/api/admin/force-end-room", { sessionId, roomId });
+    adminMsg("Rooms", "Room force-ended.");
+    await loadAdminRooms();
+  } catch (e) {
+    adminMsg("Rooms", e.message, true);
+  }
+}
+
+// ── Game History tab ─────────────────────────────────────────────────
+async function loadAdminHistory() {
+  adminMsg("History", "");
+  const tbody = document.getElementById("adminHistoryBody");
+  try {
+    const data = await apiGet(`/api/admin/recent-games?sessionId=${enc(sessionId)}&limit=50`);
+    tbody.innerHTML = "";
+    if (!data.games.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:20px;">No games recorded yet.</td></tr>';
+      return;
+    }
+    data.games.forEach(g => {
+      const winner = g.draw ? '—' : (g.winner || '—');
+      const ts     = new Date(g.finishedAt).toLocaleString();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family:monospace;font-size:0.78rem;">${esc(g.roomId.substring(0,8))}…</td>
+        <td>${esc(g.gameType)}</td>
+        <td>${esc(g.playerX)}</td>
+        <td>${esc(g.playerO)}</td>
+        <td>${esc(winner)}</td>
+        <td>${g.draw ? '✔' : '—'}</td>
+        <td style="font-size:0.78rem;color:var(--muted);">${esc(ts)}</td>`;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    adminMsg("History", e.message, true);
+  }
+}
+
+async function loadAdminAll() {
+  await Promise.all([loadAdminPlayers(), loadAdminRooms(), loadAdminHistory()]);
+}
+
+// Start/stop 30s rooms timer when tab is toggled
+document.querySelectorAll(".admin-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    if (tab.dataset.tab === "tab-rooms") {
+      startRoomsAutoRefresh();
+    } else {
+      stopRoomsAutoRefresh();
+    }
+  });
+});
+
+document.getElementById("refreshAdminBtn").addEventListener("click", loadAdminAll);
 
 // ── Queue & matchmaking ───────────────────────────────────────────────
 async function startQueueForGame(gameType) {
@@ -1132,13 +1581,21 @@ async function showResults(state) {
   const myPid = isConnectFour
     ? (mySymbol === "Y" ? state.playerX : state.playerO)
     : (mySymbol === "X" || mySymbol === "R") ? state.playerX : state.playerO;
-  const isDraw = state.draw;
-  const iWon   = !isDraw && state.winner === myPid;
 
-  document.getElementById("resultEmoji").textContent    = iWon ? "🏆" : isDraw ? "🤝" : "😞";
   const hl = document.getElementById("resultHeadline");
-  hl.textContent = iWon ? "You Win!" : isDraw ? "It's a Draw!" : "You Lose";
-  hl.className   = "result-headline " + (iWon ? "win" : isDraw ? "draw" : "lose");
+  const isTerminated = (state.statusMessage || "").includes("terminated by admin");
+  const isDraw = !isTerminated && state.draw;
+  const iWon   = !isTerminated && !isDraw && state.winner === myPid;
+
+  if (isTerminated) {
+    document.getElementById("resultEmoji").textContent = "🛑";
+    hl.textContent = "Game Terminated";
+    hl.className   = "result-headline lose";
+  } else {
+    document.getElementById("resultEmoji").textContent = iWon ? "🏆" : isDraw ? "🤝" : "😞";
+    hl.textContent = iWon ? "You Win!" : isDraw ? "It's a Draw!" : "You Lose";
+    hl.className   = "result-headline " + (iWon ? "win" : isDraw ? "draw" : "lose");
+  }
   document.getElementById("resultSub").textContent = state.statusMessage || "";
 
   const dur   = gameStartedAt ? Math.round((Date.now() - gameStartedAt) / 1000) : 0;
@@ -1236,336 +1693,6 @@ function esc(s) {
   d.textContent = s;
   return d.innerHTML;
 }
-</script>
-</body>
-</html>
-  <style>
-    :root {
-      --bg: #f4efe5;
-      --panel: #fffaf2;
-      --ink: #1f2a44;
-      --accent: #0a7f5a;
-      --line: #c8b998;
-      --danger: #a02020;
-    }
-
-    body {
-      margin: 0;
-      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top right, #fff7e4, var(--bg));
-      color: var(--ink);
-    }
-
-    .wrap {
-      max-width: 980px;
-      margin: 28px auto;
-      padding: 16px;
-      display: grid;
-      gap: 14px;
-      grid-template-columns: 1fr;
-    }
-
-    .card {
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: 12px;
-      padding: 14px;
-      box-shadow: 0 4px 12px rgba(20, 30, 60, 0.08);
-    }
-
-    h1 {
-      margin: 0;
-      letter-spacing: 0.6px;
-      font-size: 1.6rem;
-    }
-
-    h2 {
-      margin: 0 0 10px 0;
-      font-size: 1.1rem;
-    }
-
-    .row { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    input, button, select {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 8px 10px;
-      font-size: 0.95rem;
-      background: #fff;
-    }
-
-    button {
-      cursor: pointer;
-      background: var(--accent);
-      color: white;
-      border: none;
-      transition: transform 0.12s ease;
-    }
-
-    button:hover { transform: translateY(-1px); }
-
-    #board {
-      display: grid;
-      grid-template-columns: repeat(3, 72px);
-      gap: 6px;
-      margin-top: 10px;
-    }
-
-    .cell {
-      width: 72px;
-      height: 72px;
-      font-size: 2rem;
-      font-weight: bold;
-      background: #fff;
-      border: 2px solid var(--ink);
-      color: var(--ink);
-    }
-
-    .muted { opacity: 0.75; }
-    .err { color: var(--danger); }
-
-    @media (max-width: 700px) {
-      #board { grid-template-columns: repeat(3, 58px); }
-      .cell { width: 58px; height: 58px; }
-    }
-  </style>
-</head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <h1>Multiplayer Game Platform</h1>
-    <p class="muted">Login with your player ID and name, view your profile, choose a game, and play remotely.</p>
-  </div>
-
-  <div class="card">
-    <h2>Login</h2>
-    <div class="row">
-      <input id="playerId" placeholder="Player ID (e.g. p001)" />
-      <input id="playerName" placeholder="Player Name" />
-      <button id="loginBtn">Connect</button>
-    </div>
-    <p id="loginStatus"></p>
-  </div>
-
-  <div class="card" id="profileCard" style="display:none;">
-    <h2>Profile</h2>
-    <pre id="profileOut"></pre>
-  </div>
-
-  <div class="card" id="gameSelectCard" style="display:none;">
-    <h2>Choose Game</h2>
-    <div class="row">
-      <select id="gameSelect"></select>
-      <button id="queueBtn">Find Match</button>
-    </div>
-    <p id="queueStatus"></p>
-  </div>
-
-  <div class="card" id="matchCard" style="display:none;">
-    <h2>Match</h2>
-    <p id="matchInfo"></p>
-    <p id="stateInfo"></p>
-    <div id="board"></div>
-    <p id="actionInfo"></p>
-    <button id="leaveBtn" style="display:none; background:#a02020;">Leave Match (Forfeit)</button>
-  </div>
-</div>
-
-<script>
-  let sessionId = null;
-  let roomId = null;
-  let mySymbol = null;
-  let myPlayerName = null;
-  let matchPollTimer = null;
-  let statePollTimer = null;
-  let heartbeatTimer = null;
-
-  const loginStatus = document.getElementById("loginStatus");
-  const queueStatus = document.getElementById("queueStatus");
-  const matchInfo = document.getElementById("matchInfo");
-  const stateInfo = document.getElementById("stateInfo");
-  const actionInfo = document.getElementById("actionInfo");
-  const boardEl = document.getElementById("board");
-
-  document.getElementById("loginBtn").addEventListener("click", login);
-  document.getElementById("queueBtn").addEventListener("click", queueForGame);
-  document.getElementById("leaveBtn").addEventListener("click", leaveGame);
-
-  async function login() {
-    const playerId = document.getElementById("playerId").value.trim();
-    const playerName = document.getElementById("playerName").value.trim();
-    try {
-      const res = await apiPost("/api/login", { playerId, playerName });
-      sessionId = res.sessionId;
-      myPlayerName = res.playerName;
-      loginStatus.textContent = "Connected as " + res.profile.playerName + " (" + res.profile.playerId + ")";
-      loginStatus.className = "";
-
-      document.getElementById("profileCard").style.display = "block";
-      document.getElementById("gameSelectCard").style.display = "block";
-      renderProfile(res.profile);
-      await loadGames();
-    } catch (e) {
-      loginStatus.textContent = e.message;
-      loginStatus.className = "err";
-    }
-  }
-
-  function renderProfile(profile) {
-    document.getElementById("profileOut").textContent = JSON.stringify(profile, null, 2);
-  }
-
-  async function loadGames() {
-    const games = await apiGet("/api/games");
-    const sel = document.getElementById("gameSelect");
-    sel.innerHTML = "";
-    for (const game of games.games) {
-      const op = document.createElement("option");
-      op.value = game;
-      op.textContent = game;
-      sel.appendChild(op);
-    }
-  }
-
-  async function queueForGame() {
-    if (!sessionId) return;
-    const gameType = document.getElementById("gameSelect").value;
-    try {
-      const ticket = await apiPost("/api/match/request", { sessionId, gameType });
-      if (!ticket.ticketId) {
-        queueStatus.textContent = ticket.message;
-        return;
-      }
-      queueStatus.textContent = "Queued. Waiting for opponent...";
-      startMatchPolling(ticket.ticketId);
-    } catch (e) {
-      queueStatus.textContent = e.message;
-      queueStatus.className = "err";
-    }
-  }
-
-  function startMatchPolling(ticketId) {
-    clearInterval(matchPollTimer);
-    matchPollTimer = setInterval(async () => {
-      try {
-        const status = await apiGet(`/api/match/poll?sessionId=${enc(sessionId)}&ticketId=${enc(ticketId)}`);
-        queueStatus.textContent = status.message;
-        if (status.matched) {
-          clearInterval(matchPollTimer);
-          roomId = status.roomId;
-          mySymbol = status.symbol;
-          document.getElementById("matchCard").style.display = "block";
-          document.getElementById("leaveBtn").style.display = "inline-block";
-          matchInfo.textContent = `Matched! You are ${myPlayerName} (${mySymbol}). Opponent: ${status.opponent}`;
-          startStateLoop();
-        }
-      } catch (e) {
-        queueStatus.textContent = e.message;
-      }
-    }, 1000);
-  }
-
-  function startStateLoop() {
-    clearInterval(statePollTimer);
-    clearInterval(heartbeatTimer);
-
-    statePollTimer = setInterval(async () => {
-      if (!roomId) return;
-      try {
-        const state = await apiGet(`/api/game/state?sessionId=${enc(sessionId)}&roomId=${enc(roomId)}`);
-        renderBoard(state);
-        const turnName = state.currentTurn === "X" ? state.playerXName : state.playerOName;
-        stateInfo.textContent = `Turn: ${turnName} (${state.currentTurn}) | ${state.statusMessage || ""}`;
-
-        if (state.finished) {
-          clearInterval(statePollTimer);
-          clearInterval(heartbeatTimer);
-          document.getElementById("leaveBtn").style.display = "none";
-          if (state.draw) {
-            actionInfo.textContent = "It's a draw!";
-          } else {
-            const myPlayerId = mySymbol === "X" ? state.playerX : state.playerO;
-            actionInfo.textContent = (state.winner === myPlayerId) ? "You win!" : "You lose.";
-          }
-          const profile = await apiGet(`/api/profile?sessionId=${enc(sessionId)}`);
-          renderProfile(profile);
-        } else {
-          actionInfo.textContent = (state.currentTurn === mySymbol) ? "Your turn" : "Opponent turn";
-        }
-      } catch (e) {
-        actionInfo.textContent = e.message;
-      }
-    }, 900);
-
-    heartbeatTimer = setInterval(async () => {
-      if (!roomId) return;
-      try {
-        await apiPost("/api/game/heartbeat", { sessionId, roomId });
-      } catch (_) {}
-    }, 4000);
-  }
-
-  function renderBoard(state) {
-    boardEl.innerHTML = "";
-    for (let r = 0; r < 3; r++) {
-      for (let c = 0; c < 3; c++) {
-        const btn = document.createElement("button");
-        btn.className = "cell";
-        btn.textContent = state.board[r][c] || "";
-        btn.disabled = !!state.board[r][c] || state.finished || state.currentTurn !== mySymbol;
-        btn.addEventListener("click", async () => {
-          try {
-            const res = await apiPost("/api/game/move", { sessionId, roomId, row: r, col: c });
-            actionInfo.textContent = res.message;
-          } catch (e) {
-            actionInfo.textContent = e.message;
-          }
-        });
-        boardEl.appendChild(btn);
-      }
-    }
-  }
-
-  async function leaveGame() {
-    if (!sessionId || !roomId) return;
-    try {
-      await apiPost("/api/game/leave", { sessionId, roomId });
-    } catch (_) {}
-  }
-
-  window.addEventListener("beforeunload", () => {
-    if (sessionId && roomId) {
-      const data = new URLSearchParams({ sessionId, roomId }).toString();
-      navigator.sendBeacon("/api/game/leave", data);
-    }
-  });
-
-  async function apiGet(url) {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!res.ok || data.error) {
-      throw new Error(data.error || "Request failed");
-    }
-    return data;
-  }
-
-  async function apiPost(url, body) {
-    const encoded = new URLSearchParams(body).toString();
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-      body: encoded
-    });
-    const data = await res.json();
-    if (!res.ok || data.error) {
-      throw new Error(data.error || "Request failed");
-    }
-    return data;
-  }
-
-  function enc(s) {
-    return encodeURIComponent(s);
-  }
 </script>
 </body>
 </html>

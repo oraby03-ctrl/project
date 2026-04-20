@@ -35,6 +35,7 @@ C:\Users\oraby\IdeaProjects\webapp\src\Main.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\server\presentation\ServerMain.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\server\domain\CheckersRoom.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\server\domain\PlayerSessionRegistry.java
+C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\server\infrastructure\PasswordUtil.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\shared\dto\GameStateView.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\shared\dto\MoveResult.java
 C:\Users\oraby\IdeaProjects\webapp\src\com\webapp\server\domain\MatchRequest.java

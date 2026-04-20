@@ -7,7 +7,6 @@ import com.webapp.server.domain.IRoom;
 import com.webapp.server.domain.MatchTicketState;
 import com.webapp.server.domain.MoveOutcome;
 import com.webapp.server.domain.PlayerSessionRegistry;
-import com.webapp.server.domain.SessionInfo;
 import com.webapp.server.infrastructure.PersistenceService;
 import com.webapp.shared.dto.CheckersMoveRequest;
 import com.webapp.shared.dto.ConnectFourMoveRequest;
@@ -63,6 +62,9 @@ public class GamePlatformService {
     public MatchTicket requestMatch(String sessionId, GameType gameType) {
         String playerId = sessions.requirePlayerId(sessionId);
         String playerName = sessions.requirePlayerName(sessionId);
+        if ("admin".equals(playerId)) {
+            throw new IllegalStateException("Admin account cannot play games");
+        }
         if (gameType == GameType.BATTLESHIP) {
             return new MatchTicket("", "Battleship is under development");
         }
@@ -150,10 +152,6 @@ public class GamePlatformService {
         persistIfFinished(room);
     }
 
-    public SessionInfo getSessionInfo(String sessionId) {
-        return sessions.requireSession(sessionId);
-    }
-
     public MoveResult makeConnectFourMove(ConnectFourMoveRequest req) {
         String playerId = sessions.requirePlayerId(req.sessionId());
         IRoom iRoom = matchmaking.requireRoomByPlayer(playerId, req.roomId());
@@ -179,10 +177,71 @@ public class GamePlatformService {
     }
 
     public List<PlayerProfileView> getScoreboard() {
-        return persistenceService.getScoreboard();
+        return persistenceService.getScoreboard().stream()
+                .filter(p -> !"admin".equals(p.playerId()))
+                .toList();
+    }
+
+    /** Admin-only: deletes another player's account from the database. */
+    public void deletePlayer(String adminSessionId, String targetPlayerId) {
+        requireAdmin(adminSessionId);
+        if ("admin".equals(targetPlayerId)) {
+            throw new IllegalArgumentException("Cannot delete the admin account");
+        }
+        persistenceService.deletePlayer(targetPlayerId);
+    }
+
+    /** Admin-only: resets a player's W/D/L stats to zero. */
+    public void resetPlayerStats(String adminSessionId, String targetPlayerId) {
+        requireAdmin(adminSessionId);
+        if ("admin".equals(targetPlayerId)) {
+            throw new IllegalArgumentException("Cannot reset the admin account");
+        }
+        persistenceService.resetPlayerStats(targetPlayerId);
+    }
+
+    public java.util.List<java.util.Map<String, Object>> getActiveRooms(String adminSessionId) {
+        requireAdmin(adminSessionId);
+        java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
+        for (com.webapp.server.domain.IRoom room : matchmaking.getAllRooms()) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("roomId",    room.getRoomId());
+            m.put("gameType",  room.getGameType().name());
+            m.put("playerX",   room.getPlayerX());
+            m.put("playerO",   room.getPlayerO());
+            m.put("finished",  room.isFinished());
+            com.webapp.shared.dto.GameStateView snap = room.snapshot();
+            m.put("winner",    snap.winner());
+            m.put("draw",      snap.draw());
+            result.add(m);
+        }
+        return result;
+    }
+
+    /** Admin-only: returns the most recent finished game records. */
+    public java.util.List<com.webapp.server.infrastructure.jpa.GameRecordEntity> getRecentGames(String adminSessionId, int limit) {
+        requireAdmin(adminSessionId);
+        return persistenceService.getRecentGames(limit);
+    }
+
+    /** Admin-only: force-ends a live room (playerX forfeits, playerO wins). */
+    public void forceEndRoom(String adminSessionId, String roomId) {
+        requireAdmin(adminSessionId);
+        matchmaking.forceEndRoom(roomId);
+    }
+
+    private void requireAdmin(String sessionId) {
+        String callerId = sessions.requirePlayerId(sessionId);
+        if (!"admin".equals(callerId)) {
+            throw new SecurityException("Access denied: admin only");
+        }
     }
 
     private void persistIfFinished(IRoom room) {
+        if (room.isAdminEnded()) {
+            room.markPersistedIfNeeded(); // consume the flag so it won't fire again
+            return;                        // skip stats update and game record
+        }
         if (room.markPersistedIfNeeded()) {
             GameStateView state = room.snapshot();
             persistenceService.persistFinishedGame(
@@ -213,5 +272,46 @@ public class GamePlatformService {
         if (clean.length() < 3 || clean.length() > 24) {
             throw new IllegalArgumentException("Player ID length must be 3..24");
         }
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (password.length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters");
+        }
+    }
+
+    /**
+     * Registers a brand-new player account.
+     * Throws if the player ID is already taken.
+     */
+    public RegisterResponse createAccount(String playerId, String playerName, String password) {
+        validatePlayerId(playerId);
+        validatePlayerName(playerName);
+        validatePassword(password);
+        String cleanId   = playerId.trim();
+        String cleanName = playerName.trim();
+        persistenceService.registerNewPlayer(cleanId, cleanName, password);
+        String sessionId = sessions.register(cleanId, cleanName);
+        return new RegisterResponse(sessionId, cleanName);
+    }
+
+    /**
+     * Logs in an existing player by verifying their password.
+     * Throws if the player does not exist or the password is wrong.
+     */
+    public RegisterResponse loginPlayer(String playerId, String password) {
+        if (playerId == null || playerId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Player ID is required");
+        }
+        if (password == null || password.isEmpty()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        String cleanId = playerId.trim();
+        String playerName = persistenceService.verifyLogin(cleanId, password);
+        String sessionId = sessions.register(cleanId, playerName);
+        return new RegisterResponse(sessionId, playerName);
     }
 }

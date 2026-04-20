@@ -28,4 +28,17 @@ public class GameRecordJpaRepository {
             em.close();
         }
     }
+
+    public java.util.List<GameRecordEntity> getRecentGames(int limit) {
+        EntityManager em = entityManagerFactory.createEntityManager();
+        try {
+            return em.createQuery(
+                    "select g from GameRecordEntity g order by g.finishedAt desc",
+                    GameRecordEntity.class)
+                    .setMaxResults(limit)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
 }
